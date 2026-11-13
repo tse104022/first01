@@ -1,0 +1,2493 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>尼羅河秘寶：諸神神殿 - Mystic Nile: Temple of the Gods</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Noto+Serif+TC:wght@600;700;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* =========================================================
+           奢華古埃及神殿與琉璃金雕視覺設計系統
+        ========================================================= */
+        :root {
+            --gold-light: #fef08a;
+            --gold-mid: #f59e0b;
+            --gold-dark: #92400e;
+            --obsidian: #070a14;
+            --lapis: #111b36;
+        }
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #05070e;
+            color: #fef3c7;
+            overflow-x: hidden;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .egypt-serif {
+            font-family: 'Cinzel', 'Noto Serif TC', serif;
+            letter-spacing: 0.05em;
+        }
+
+        /* 動態神殿星空背景畫布 */
+        #ambient-bg-canvas {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* 毛玻璃與雙層金雕浮雕面板 */
+        .temple-glass-panel {
+            background: linear-gradient(165deg, rgba(20, 30, 58, 0.78) 0%, rgba(9, 13, 26, 0.88) 100%);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1.5px solid rgba(251, 191, 36, 0.45);
+            box-shadow:
+                0 12px 32px rgba(0, 0, 0, 0.75),
+                inset 0 1px 1px rgba(254, 240, 138, 0.3),
+                inset 0 0 20px rgba(245, 158, 11, 0.08);
+        }
+
+        /* 內嵌黑曜石數據匣 */
+        .obsidian-inset {
+            background: linear-gradient(180deg, rgba(4, 7, 15, 0.92) 0%, rgba(14, 21, 40, 0.85) 100%);
+            border: 1px solid rgba(217, 119, 6, 0.4);
+            box-shadow: inset 0 3px 10px rgba(0, 0, 0, 0.85), 0 1px 0 rgba(254, 240, 138, 0.15);
+        }
+
+        /* 金屬浮雕文字漸層 */
+        .gold-foil-text {
+            background: linear-gradient(180deg, #fffbeb 0%, #fde047 45%, #d97706 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
+        }
+
+        /* 8x8 黑曜石鑲金神殿棋盤外框 */
+        #board-frame {
+            position: relative;
+            background: linear-gradient(145deg, #2e200d 0%, #140d05 45%, #261a0b 100%);
+            border: 3px solid #f59e0b;
+            border-radius: 20px;
+            padding: 10px;
+            box-shadow:
+                0 20px 50px rgba(0, 0, 0, 0.9),
+                0 0 35px rgba(245, 158, 11, 0.25),
+                inset 0 0 0 2px rgba(254, 240, 138, 0.35),
+                inset 0 0 25px rgba(0, 0, 0, 0.95);
+            aspect-ratio: 1 / 1;
+            width: 100%;
+        }
+
+        /* 四角純金神殿角飾 */
+        .corner-ornament {
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            border-color: #fef08a;
+            pointer-events: none;
+            z-index: 25;
+            filter: drop-shadow(0 0 4px rgba(251, 191, 36, 0.8));
+        }
+        .corner-tl { top: 4px; left: 4px; border-top: 3px solid; border-left: 3px solid; border-top-left-radius: 12px; }
+        .corner-tr { top: 4px; right: 4px; border-top: 3px solid; border-right: 3px solid; border-top-right-radius: 12px; }
+        .corner-bl { bottom: 4px; left: 4px; border-bottom: 3px solid; border-left: 3px solid; border-bottom-left-radius: 12px; }
+        .corner-br { bottom: 4px; right: 4px; border-bottom: 3px solid; border-right: 3px solid; border-bottom-right-radius: 12px; }
+
+        /* 棋盤格核心區域 */
+        #board-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+            background: radial-gradient(circle at center, #0d152b 0%, #060913 100%);
+            box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.95);
+            touch-action: none;
+        }
+
+        /* 單格神龕凹槽與聖書體微浮雕 */
+        .grid-slot {
+            position: absolute;
+            box-sizing: border-box;
+            padding: 3px;
+        }
+        .grid-slot-inner {
+            width: 100%;
+            height: 100%;
+            border-radius: 9px;
+            background: rgba(19, 29, 54, 0.5);
+            border: 1px solid rgba(245, 158, 11, 0.14);
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.65);
+            position: relative;
+        }
+        .grid-slot:nth-child(odd) .grid-slot-inner {
+            background: rgba(12, 19, 38, 0.68);
+        }
+
+        /* 寶石方塊容器與彈性緩動物理位移 */
+        .gem-tile {
+            position: absolute;
+            box-sizing: border-box;
+            padding: 3.5px;
+            cursor: pointer;
+            transition: transform 0.28s cubic-bezier(0.34, 1.32, 0.64, 1), opacity 0.2s ease;
+            z-index: 10;
+            will-change: transform;
+        }
+
+        /* 琉璃寶石底座與金屬鑲邊 */
+        .gem-inner {
+            width: 100%;
+            height: 100%;
+            border-radius: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s ease, filter 0.18s ease;
+            box-shadow:
+                0 5px 10px rgba(0, 0, 0, 0.65),
+                inset 0 2px 3px rgba(255, 255, 255, 0.5),
+                inset 0 -3px 6px rgba(0, 0, 0, 0.55);
+        }
+
+        /* 琉璃反光掃光動畫 (Shimmer) */
+        .gem-inner::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -120%;
+            width: 70%;
+            height: 200%;
+            background: linear-gradient(
+                105deg,
+                rgba(255, 255, 255, 0) 20%,
+                rgba(255, 255, 255, 0.42) 50%,
+                rgba(255, 255, 255, 0) 80%
+            );
+            transform: rotate(25deg);
+            pointer-events: none;
+            transition: left 0.55s ease;
+        }
+        .gem-tile:hover .gem-inner::before,
+        .gem-tile.shimmer-once .gem-inner::before {
+            left: 160%;
+        }
+
+        /* 選中狀態：黃金聖環與浮起效果 */
+        .gem-tile.selected {
+            z-index: 25;
+        }
+        .gem-tile.selected .gem-inner {
+            transform: scale(1.13);
+            box-shadow:
+                0 0 0 2.5px #fef08a,
+                0 0 22px rgba(250, 204, 21, 0.9),
+                inset 0 2px 5px rgba(255, 255, 255, 0.75);
+            filter: brightness(1.15);
+        }
+
+        /* 智慧之眼提示動畫 */
+        .gem-tile.hint .gem-inner {
+            animation: divineHint 0.85s infinite alternate cubic-bezier(0.45, 0, 0.55, 1);
+        }
+        @keyframes divineHint {
+            0% { transform: scale(0.94); box-shadow: 0 0 8px #38bdf8; }
+            100% { transform: scale(1.12); box-shadow: 0 0 22px #38bdf8, 0 0 0 2.5px #bae6fd; filter: brightness(1.2); }
+        }
+
+        /* 消除爆裂縮放動畫 */
+        .gem-tile.matching {
+            z-index: 22;
+        }
+        .gem-tile.matching .gem-inner {
+            animation: gemShatter 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        @keyframes gemShatter {
+            0% { transform: scale(1); opacity: 1; }
+            45% { transform: scale(1.28); filter: brightness(1.85); opacity: 1; }
+            100% { transform: scale(0.05); opacity: 0; }
+        }
+
+        /* =========================================================
+           特殊神力方塊發光特效（4連光束 / L&T神火 / 5連全知之眼）
+        ========================================================= */
+        .special-beam-h::after {
+            content: '';
+            position: absolute;
+            inset: 2px;
+            border-radius: 9px;
+            border: 2px solid #fef08a;
+            box-shadow: inset 0 0 12px #facc15, 0 0 10px rgba(250, 204, 21, 0.7);
+            animation: pulseAura 1.2s infinite alternate;
+            pointer-events: none;
+        }
+        .special-beam-v::after {
+            content: '';
+            position: absolute;
+            inset: 2px;
+            border-radius: 9px;
+            border: 2px solid #7dd3fc;
+            box-shadow: inset 0 0 12px #38bdf8, 0 0 10px rgba(56, 189, 248, 0.7);
+            animation: pulseAura 1.2s infinite alternate;
+            pointer-events: none;
+        }
+        .special-bomb::after {
+            content: '';
+            position: absolute;
+            inset: 1px;
+            border-radius: 10px;
+            border: 2.5px solid #fda4af;
+            box-shadow: inset 0 0 14px #f43f5e, 0 0 14px rgba(244, 63, 94, 0.85);
+            animation: pulseAura 0.9s infinite alternate;
+            pointer-events: none;
+        }
+        .special-rainbow {
+            animation: rainbowRotate 4s linear infinite;
+        }
+
+        @keyframes pulseAura {
+            0% { opacity: 0.7; transform: scale(0.98); }
+            100% { opacity: 1; transform: scale(1.02); }
+        }
+
+        /* 棋盤震撼特效 (Screen Shake) */
+        .shake-board {
+            animation: templeShake 0.34s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        }
+        @keyframes templeShake {
+            10%, 90% { transform: translate3d(-2.5px, 1.5px, 0); }
+            20%, 80% { transform: translate3d(3.5px, -2px, 0); }
+            30%, 50%, 70% { transform: translate3d(-4.5px, 2.5px, 0); }
+            40%, 60% { transform: translate3d(4.5px, -2.5px, 0); }
+        }
+
+        /* 純金浮雕按鈕 */
+        .royal-gold-btn {
+            background: linear-gradient(180deg, #fbbf24 0%, #d97706 55%, #92400e 100%);
+            border: 1.5px solid #fef08a;
+            color: #fffbeb;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.65);
+            box-shadow: 0 4px 0 #78350f, 0 8px 20px rgba(217, 119, 6, 0.45);
+            transition: all 0.14s ease;
+        }
+        .royal-gold-btn:hover:not(:disabled) {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+            box-shadow: 0 5px 0 #78350f, 0 10px 25px rgba(245, 158, 11, 0.6);
+        }
+        .royal-gold-btn:active:not(:disabled) {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 #78350f;
+        }
+        .royal-gold-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: translateY(2px);
+        }
+
+        /* 道具按鈕質感 */
+        .blessing-card {
+            background: linear-gradient(180deg, rgba(18, 27, 52, 0.95) 0%, rgba(9, 14, 28, 0.98) 100%);
+            transition: all 0.16s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        }
+        .blessing-card:hover:not(:disabled) {
+            transform: translateY(-2px);
+            filter: brightness(1.14);
+        }
+        .blessing-card:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+        .blessing-card:disabled {
+            opacity: 0.42;
+            cursor: not-allowed;
+        }
+
+        /* 法老權杖瞄準模式 */
+        .scepter-mode #board-container {
+            cursor: crosshair;
+            box-shadow: inset 0 0 32px rgba(244, 63, 94, 0.85);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-2.5 sm:p-4 relative">
+
+    <!-- 背景動態神殿星空與金色聖塵畫布 -->
+    <canvas id="ambient-bg-canvas"></canvas>
+
+    <!-- 主遊戲介面容器 -->
+    <main class="relative z-10 w-full max-w-[510px] flex flex-col gap-2.5 sm:gap-3">
+        
+        <!-- 頂部神殿標題與音效 / 圖鑑控制列 -->
+        <header class="flex items-center justify-between gap-2 px-1">
+            <div class="flex items-center gap-2.5">
+                <!-- 太陽神翼輪徽章 -->
+                <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-amber-300 via-amber-500 to-amber-800 p-0.5 shadow-[0_0_20px_rgba(245,158,11,0.45)] shrink-0">
+                    <div class="w-full h-full bg-[#080c18] rounded-[14px] flex items-center justify-center">
+                        <svg class="w-8 h-8" viewBox="0 0 48 48" fill="none">
+                            <defs>
+                                <radialGradient id="logoSun" cx="35%" cy="35%" r="65%">
+                                    <stop offset="0%" stop-color="#fef9c3"/>
+                                    <stop offset="50%" stop-color="#f59e0b"/>
+                                    <stop offset="100%" stop-color="#92400e"/>
+                                </radialGradient>
+                            </defs>
+                            <circle cx="24" cy="22" r="9" fill="url(#logoSun)" stroke="#fef08a" stroke-width="1.5"/>
+                            <path d="M4 22C10 18 14 19 16 22C13 25 9 25 4 22Z" fill="#fbbf24"/>
+                            <path d="M44 22C38 18 34 19 32 22C35 25 39 25 44 22Z" fill="#fbbf24"/>
+                            <path d="M18 33L24 28L30 33L24 41L18 33Z" fill="#38bdf8" stroke="#fef08a" stroke-width="1.2"/>
+                        </svg>
+                    </div>
+                </div>
+                <div>
+                    <h1 class="egypt-serif text-xl sm:text-2xl font-black gold-foil-text leading-tight">
+                        尼羅河秘寶：諸神神殿
+                    </h1>
+                    <p class="text-[10px] sm:text-xs text-amber-300/75 tracking-wider font-medium">
+                        MYSTIC NILE: TEMPLE OF THE GODS
+                    </p>
+                </div>
+            </div>
+
+            <!-- 功能按鈕群：神話圖鑑、BGM 音樂、音效、重玩 -->
+            <div class="flex items-center gap-1.5">
+                <!-- 神話圖鑑與規則說明 -->
+                <button id="guide-btn" title="神話圖鑑與規則說明" class="px-2.5 py-2 rounded-xl temple-glass-panel hover:border-amber-300 text-amber-200 text-xs font-bold flex items-center gap-1 transition active:scale-95">
+                    <span>📜</span>
+                    <span class="hidden sm:inline">圖鑑</span>
+                </button>
+
+                <!-- 背景五聲音階氛圍音樂開關 -->
+                <button id="bgm-btn" title="切換神殿氛圍音樂 (BGM)" class="p-2 rounded-xl temple-glass-panel hover:border-amber-300 text-amber-300 transition active:scale-95 relative">
+                    <span id="bgm-icon" class="text-sm sm:text-base leading-none block">🎵</span>
+                    <span id="bgm-slash" class="hidden absolute inset-0 flex items-center justify-center text-rose-500 font-black text-lg">╱</span>
+                </button>
+
+                <!-- 遊戲音效開關 -->
+                <button id="sfx-btn" title="切換互動音效 (SFX)" class="p-2 rounded-xl temple-glass-panel hover:border-amber-300 text-amber-300 transition active:scale-95">
+                    <svg id="sfx-on-icon" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+                    </svg>
+                    <svg id="sfx-off-icon" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 sm:w-5 sm:h-5 text-slate-500 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>
+                    </svg>
+                </button>
+
+                <!-- 重新開始本關 -->
+                <button id="restart-btn" title="重新挑戰本關" class="p-2 rounded-xl temple-glass-panel hover:border-amber-300 text-amber-300 transition active:scale-95">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- 神殿關卡資訊、圖騰收集目標與拉神充能儀表板 -->
+        <section class="temple-glass-panel rounded-2xl p-3 sm:p-3.5 flex flex-col gap-2.5">
+            <!-- 第一排：神殿名稱、剩餘步數、目前分數 -->
+            <div class="grid grid-cols-12 gap-2 items-center">
+                <!-- 神殿章節名稱 -->
+                <div class="col-span-5 obsidian-inset rounded-xl py-1.5 px-2.5 text-left">
+                    <div id="level-badge" class="text-[10px] font-bold text-amber-400/90 tracking-wider">第 1 關</div>
+                    <div id="temple-name" class="egypt-serif text-xs sm:text-sm font-black text-amber-100 truncate">金字塔聖殿</div>
+                </div>
+
+                <!-- 剩餘步數 -->
+                <div class="col-span-3 obsidian-inset rounded-xl py-1.5 px-1 text-center">
+                    <div class="text-[10px] font-bold text-sky-300/80">剩餘步數</div>
+                    <div id="moves-display" class="text-lg sm:text-xl font-black text-sky-400 leading-tight">25</div>
+                </div>
+
+                <!-- 目前得分 -->
+                <div class="col-span-4 obsidian-inset rounded-xl py-1.5 px-2 text-center">
+                    <div class="text-[10px] font-bold text-emerald-300/80">神力積分</div>
+                    <div id="score-display" class="text-lg sm:text-xl font-black text-emerald-400 leading-tight">0</div>
+                </div>
+            </div>
+
+            <!-- 第二排：關卡雙重過關目標（分數進度 + 特定神話圖騰收集） -->
+            <div class="obsidian-inset rounded-xl p-2 sm:p-2.5 flex flex-col gap-2">
+                <div class="flex items-center justify-between gap-2">
+                    <!-- 特定圖騰收集目標容器 -->
+                    <div id="collect-targets-container" class="flex items-center gap-2 sm:gap-3">
+                        <!-- 由 JS 動態填入本關需收集的 1~2 種神話寶石 -->
+                    </div>
+
+                    <!-- 分數目標文字 -->
+                    <div class="text-right shrink-0">
+                        <div class="text-[10px] text-amber-200/70">目標分數</div>
+                        <div class="text-xs sm:text-sm font-black text-amber-300">
+                            <span id="target-score-display">1,500</span>
+                            <span id="score-check-icon" class="hidden text-emerald-400 ml-0.5">✓</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 雙進度條：上方為分數進度，下方為「拉神天罰」能量充能條 -->
+                <div class="space-y-1.5">
+                    <!-- 分數進度條 -->
+                    <div class="w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-amber-600/40">
+                        <div id="score-progress-bar" class="h-full w-0 rounded-full bg-gradient-to-r from-amber-500 via-yellow-300 to-emerald-400 transition-all duration-300"></div>
+                    </div>
+
+                    <!-- 太陽神「拉神天罰」充能條 -->
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-black text-orange-300 whitespace-nowrap flex items-center gap-1">
+                            <span>☀️ 拉神天罰</span>
+                        </span>
+                        <div class="flex-1 h-2 bg-slate-950 rounded-full overflow-hidden border border-orange-500/40 relative">
+                            <div id="ra-charge-bar" class="h-full w-0 rounded-full bg-gradient-to-r from-orange-600 via-amber-400 to-yellow-200 transition-all duration-300 shadow-[0_0_8px_#f59e0b]"></div>
+                        </div>
+                        <span id="ra-charge-text" class="text-[10px] font-black text-amber-300 w-8 text-right">0%</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 8x8 黑曜石鑲金遊戲主棋盤區 -->
+        <section id="board-frame">
+            <!-- 四角純金神殿角飾 -->
+            <div class="corner-ornament corner-tl"></div>
+            <div class="corner-ornament corner-tr"></div>
+            <div class="corner-ornament corner-bl"></div>
+            <div class="corner-ornament corner-br"></div>
+
+            <div id="board-container">
+                <div id="grid-bg-layer" class="absolute inset-0"></div>
+                <div id="gems-layer" class="absolute inset-0"></div>
+                <!-- Canvas 粒子、雷射光束與浮動藝術字疊加層 -->
+                <canvas id="fx-canvas" class="absolute inset-0 pointer-events-none z-30"></canvas>
+            </div>
+
+            <!-- 狀態提示浮動橫幅 -->
+            <div id="toast-banner" class="pointer-events-none opacity-0 transition-opacity duration-200 absolute top-4 left-1/2 -translate-x-1/2 z-40 bg-slate-950/95 border border-amber-400 text-amber-200 text-xs sm:text-sm font-bold px-4 py-1.5 rounded-full shadow-[0_0_20px_rgba(245,158,11,0.5)] whitespace-nowrap">
+                神殿提示
+            </div>
+
+            <!-- 過關 / 挑戰失敗結算神殿彈窗 -->
+            <div id="modal-overlay" class="hidden absolute inset-0 z-50 rounded-[16px] bg-[#060914]/92 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center">
+                <div id="modal-icon" class="text-5xl sm:text-6xl mb-3 drop-shadow-[0_0_15px_rgba(251,191,36,0.8)]">👑</div>
+                <h2 id="modal-title" class="egypt-serif text-2xl sm:text-3xl font-black gold-foil-text mb-2">神殿封印解除！</h2>
+                <p id="modal-desc" class="text-xs sm:text-sm text-amber-100/85 mb-5 max-w-xs leading-relaxed">
+                    諸神見證了您的智慧！神殿大門已開啟，準備邁向下一座聖殿。
+                </p>
+
+                <div class="obsidian-inset rounded-2xl px-6 py-3.5 mb-6 w-full max-w-[250px] space-y-1.5">
+                    <div class="flex justify-between text-xs text-amber-300/80">
+                        <span>本關累積神力積分</span>
+                        <span id="modal-score" class="font-black text-emerald-400 text-base">0</span>
+                    </div>
+                    <div class="flex justify-between text-xs text-amber-300/80">
+                        <span>最高連鎖共振</span>
+                        <span id="modal-max-combo" class="font-black text-orange-400 text-sm">x1</span>
+                    </div>
+                </div>
+
+                <button id="modal-action-btn" class="royal-gold-btn font-black text-base sm:text-lg px-9 py-3 rounded-2xl tracking-wider cursor-pointer">
+                    踏入下一座神殿
+                </button>
+            </div>
+        </section>
+
+        <!-- 底部三種古埃及神明祝福道具列 -->
+        <section class="temple-glass-panel rounded-2xl p-2.5 grid grid-cols-3 gap-2 sm:gap-3">
+            <!-- 道具 1：智慧之眼（提示最佳消除步） -->
+            <button id="tool-hint-btn" class="blessing-card relative flex flex-col items-center justify-center py-2 px-1.5 rounded-xl border border-sky-400/50">
+                <span class="text-lg sm:text-xl drop-shadow">👁️</span>
+                <span class="text-xs font-bold text-sky-200 mt-0.5">智慧之眼</span>
+                <span class="text-[9px] text-sky-400/80">揭示良機</span>
+                <span id="hint-count" class="absolute -top-2 -right-1.5 bg-gradient-to-b from-sky-400 to-sky-700 text-white text-[11px] font-black w-5 h-5 rounded-full flex items-center justify-center border border-sky-200 shadow-md">3</span>
+            </button>
+
+            <!-- 道具 2：法老權杖（單點神雷摧毀任意方塊） -->
+            <button id="tool-scepter-btn" class="blessing-card relative flex flex-col items-center justify-center py-2 px-1.5 rounded-xl border border-rose-400/50">
+                <span class="text-lg sm:text-xl drop-shadow">🪄</span>
+                <span class="text-xs font-bold text-rose-200 mt-0.5">法老權杖</span>
+                <span class="text-[9px] text-rose-400/80">神雷單消</span>
+                <span id="scepter-count" class="absolute -top-2 -right-1.5 bg-gradient-to-b from-rose-400 to-rose-700 text-white text-[11px] font-black w-5 h-5 rounded-full flex items-center justify-center border border-rose-200 shadow-md">2</span>
+            </button>
+
+            <!-- 道具 3：時光沙漏（重排盤面並 +3 步數） -->
+            <button id="tool-hourglass-btn" class="blessing-card relative flex flex-col items-center justify-center py-2 px-1.5 rounded-xl border border-amber-400/50">
+                <span class="text-lg sm:text-xl drop-shadow">⏳</span>
+                <span class="text-xs font-bold text-amber-200 mt-0.5">時光沙漏</span>
+                <span class="text-[9px] text-amber-400/80">洗牌 +3 步</span>
+                <span id="hourglass-count" class="absolute -top-2 -right-1.5 bg-gradient-to-b from-amber-400 to-amber-700 text-white text-[11px] font-black w-5 h-5 rounded-full flex items-center justify-center border border-amber-200 shadow-md">2</span>
+            </button>
+        </section>
+    </main>
+
+    <!-- 課堂投影與文化講解專用：古埃及神話圖鑑與規則說明彈窗 -->
+    <div id="guide-modal" class="hidden fixed inset-0 z-50 bg-slate-950/88 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="temple-glass-panel rounded-2xl max-w-lg w-full max-h-[88vh] overflow-y-auto p-5 sm:p-6 text-left shadow-2xl">
+            <div class="flex items-center justify-between border-b border-amber-500/40 pb-3 mb-4">
+                <h2 class="egypt-serif text-xl font-black gold-foil-text flex items-center gap-2">
+                    <span>📜</span> 古埃及諸神圖鑑與神力規則
+                </h2>
+                <button id="close-guide-btn" class="text-amber-300 hover:text-white text-xl font-bold px-2">✕</button>
+            </div>
+
+            <div class="space-y-4 text-xs sm:text-sm text-amber-100/90 leading-relaxed">
+                <!-- 1. 六大琉璃寶石文化意義 -->
+                <div>
+                    <h3 class="font-black text-amber-300 mb-2 flex items-center gap-1.5">
+                        <span>🏛️</span> 六大古埃及神話圖騰象徵
+                    </h3>
+                    <div id="guide-gems-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                        <!-- 由 JS 自動渲染精緻圖騰卡片 -->
+                    </div>
+                </div>
+
+                <!-- 2. 特殊神力方塊與雙特殊組合技 -->
+                <div>
+                    <h3 class="font-black text-amber-300 mb-1.5 flex items-center gap-1.5">
+                        <span>⚡</span> 神力方塊合成與雙重組合技
+                    </h3>
+                    <ul class="space-y-1.5 obsidian-inset p-3 rounded-xl text-xs">
+                        <li><strong class="text-yellow-300">✦ 4 連消（太陽神光束）</strong>：生成帶電光環寶石，消除時發射橫向或縱向雷射清空整排/整列！</li>
+                        <li><strong class="text-rose-300">✦ L / T 型 5 連消（聖甲蟲神火）</strong>：生成爆破神火徽記，觸發時引爆周圍 <strong>3×3 範圍</strong>衝擊波！</li>
+                        <li><strong class="text-sky-300">✦ 直線 5 連消（荷魯斯全知之眼）</strong>：誕生七彩神聖光球，與任一方塊交換可釋放追蹤光束消除全場同色！</li>
+                        <li><strong class="text-amber-300">✦ 雙神力方塊交換（神力共振）</strong>：兩個特殊方塊直接相鄰交換，可觸發「十字全屏雷射」、「5×5 超級神火」或「全場同色轉化光束」等毀天滅地連攜！</li>
+                    </ul>
+                </div>
+
+                <!-- 3. 拉神天罰系統 -->
+                <div class="obsidian-inset p-3 rounded-xl text-xs border border-orange-500/30">
+                    <strong class="text-orange-300">☀️ 太陽神「拉神天罰」充能：</strong> 每次消除都會累積太陽神能量，充能達 <strong>100%</strong> 時將自動降下 3 道神聖天雷隨機轟擊棋盤並帶來額外積分！
+                </div>
+            </div>
+
+            <button id="confirm-guide-btn" class="royal-gold-btn w-full mt-5 py-2.5 rounded-xl font-black text-base cursor-pointer">
+                返回神殿繼續挑戰
+            </button>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * =========================================================================
+         * 1. 背景神殿星河與漂浮金色聖塵粒子系統 (Ambient Temple Canvas)
+         * =========================================================================
+         */
+        class AmbientTempleBackground {
+            constructor(canvasId) {
+                this.canvas = document.getElementById(canvasId);
+                this.ctx = this.canvas.getContext('2d');
+                this.particles = [];
+                this.stars = [];
+                this.width = 0;
+                this.height = 0;
+
+                this.resize();
+                window.addEventListener('resize', () => this.resize());
+                requestAnimationFrame((ts) => this.render(ts));
+            }
+
+            resize() {
+                const dpr = Math.min(window.devicePixelRatio || 1, 2);
+                this.width = window.innerWidth;
+                this.height = window.innerHeight;
+                this.canvas.width = this.width * dpr;
+                this.canvas.height = this.height * dpr;
+                this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+                // 初始化背景星辰與漂浮聖塵
+                this.stars = Array.from({ length: 55 }, () => ({
+                    x: Math.random() * this.width,
+                    y: Math.random() * this.height * 0.75,
+                    r: 0.6 + Math.random() * 1.4,
+                    phase: Math.random() * Math.PI * 2,
+                    speed: 1 + Math.random() * 2
+                }));
+
+                this.particles = Array.from({ length: 38 }, () => ({
+                    x: Math.random() * this.width,
+                    y: Math.random() * this.height,
+                    r: 1 + Math.random() * 2.4,
+                    vx: (Math.random() - 0.5) * 14,
+                    vy: -12 - Math.random() * 22,
+                    alpha: 0.25 + Math.random() * 0.65
+                }));
+            }
+
+            render(ts) {
+                const t = ts * 0.001;
+                const ctx = this.ctx;
+
+                // 深邃夜空神殿漸層
+                const skyGrad = ctx.createRadialGradient(
+                    this.width * 0.5, this.height * 0.15, 20,
+                    this.width * 0.5, this.height * 0.5, Math.max(this.width, this.height) * 0.9
+                );
+                skyGrad.addColorStop(0, '#172347');
+                skyGrad.addColorStop(0.5, '#0b1024');
+                skyGrad.addColorStop(1, '#04060d');
+                ctx.fillStyle = skyGrad;
+                ctx.fillRect(0, 0, this.width, this.height);
+
+                // 頂部神殿金色微光光柱
+                const beamGrad = ctx.createLinearGradient(0, 0, 0, this.height * 0.7);
+                beamGrad.addColorStop(0, 'rgba(245, 158, 11, 0.14)');
+                beamGrad.addColorStop(1, 'rgba(245, 158, 11, 0)');
+                ctx.fillStyle = beamGrad;
+                ctx.beginPath();
+                ctx.moveTo(this.width * 0.35, 0);
+                ctx.lineTo(this.width * 0.65, 0);
+                ctx.lineTo(this.width * 0.88, this.height * 0.7);
+                ctx.lineTo(this.width * 0.12, this.height * 0.7);
+                ctx.closePath();
+                ctx.fill();
+
+                // 遠景金字塔剪影輪廓（極低透明度增添神殿氛圍）
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.55)';
+                ctx.beginPath();
+                ctx.moveTo(this.width * 0.05, this.height);
+                ctx.lineTo(this.width * 0.28, this.height * 0.74);
+                ctx.lineTo(this.width * 0.52, this.height);
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.moveTo(this.width * 0.45, this.height);
+                ctx.lineTo(this.width * 0.74, this.height * 0.70);
+                ctx.lineTo(this.width * 1.02, this.height);
+                ctx.fill();
+
+                // 閃爍星辰
+                this.stars.forEach(s => {
+                    const alpha = 0.25 + 0.55 * (0.5 + 0.5 * Math.sin(t * s.speed + s.phase));
+                    ctx.fillStyle = `rgba(254, 240, 138, ${alpha})`;
+                    ctx.beginPath();
+                    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+
+                // 漂浮金色聖塵粒子
+                this.particles.forEach(p => {
+                    p.x += p.vx * 0.016;
+                    p.y += p.vy * 0.016;
+                    if (p.y < -10) {
+                        p.y = this.height + 10;
+                        p.x = Math.random() * this.width;
+                    }
+                    if (p.x < -10) p.x = this.width + 10;
+                    if (p.x > this.width + 10) p.x = -10;
+
+                    ctx.save();
+                    ctx.fillStyle = `rgba(251, 191, 36, ${p.alpha})`;
+                    ctx.shadowColor = '#f59e0b';
+                    ctx.shadowBlur = 6;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                });
+
+                requestAnimationFrame((nextTs) => this.render(nextTs));
+            }
+        }
+
+        /**
+         * =========================================================================
+         * 2. 沉浸式 Web Audio API 音效與「神秘尼羅河五聲音階」背景音樂引擎
+         * =========================================================================
+         */
+        class DivineEgyptAudio {
+            constructor() {
+                this.ctx = null;
+                this.sfxEnabled = true;
+                this.bgmEnabled = false; // 預設靜音待使用者首次互動後啟動，避免瀏覽器自動播放限制
+                this.bgmTimer = null;
+                this.bgmStep = 0;
+                this.userInteracted = false;
+            }
+
+            ensureContext() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (AudioContext) this.ctx = new AudioContext();
+                }
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            // 首次使用者點擊時自動開啟溫和的神秘背景音樂
+            unlockOnFirstGesture() {
+                if (this.userInteracted) return;
+                this.userInteracted = true;
+                this.ensureContext();
+                if (!this.bgmEnabled) {
+                    this.toggleBgm(true);
+                }
+            }
+
+            toggleSfx() {
+                this.sfxEnabled = !this.sfxEnabled;
+                return this.sfxEnabled;
+            }
+
+            toggleBgm(forceState = null) {
+                this.ensureContext();
+                this.bgmEnabled = forceState !== null ? forceState : !this.bgmEnabled;
+                if (this.bgmEnabled) {
+                    this.startBgmLoop();
+                } else {
+                    this.stopBgmLoop();
+                }
+                return this.bgmEnabled;
+            }
+
+            // 神秘尼羅河五聲音階豎琴撥弦背景旋律（D Hijaz / 埃及神秘音階）
+            startBgmLoop() {
+                this.stopBgmLoop();
+                // D4, Eb4, F#4, G4, A4, Bb4, C#5, D5
+                const melodyNotes = [
+                    293.66, 311.13, 369.99, 392.00, 440.00, 392.00, 369.99, 311.13,
+                    293.66, 440.00, 466.16, 554.37, 587.33, 466.16, 440.00, 369.99
+                ];
+
+                this.bgmTimer = setInterval(() => {
+                    if (!this.bgmEnabled || !this.ctx || this.ctx.state !== 'running') return;
+                    const now = this.ctx.currentTime;
+                    const freq = melodyNotes[this.bgmStep % melodyNotes.length];
+                    this.bgmStep++;
+
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now);
+
+                    // 柔和豎琴撥弦包絡線（極低音量不干擾課堂講解）
+                    gain.gain.setValueAtTime(0.001, now);
+                    gain.gain.linearRampToValueAtTime(0.032, now + 0.04);
+                    gain.gain.exponentialRampToValueAtTime(0.0005, now + 0.85);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.88);
+                }, 620);
+            }
+
+            stopBgmLoop() {
+                if (this.bgmTimer) {
+                    clearInterval(this.bgmTimer);
+                    this.bgmTimer = null;
+                }
+            }
+
+            // 選取琉璃寶石的清脆水晶聲
+            playSelect() {
+                if (!this.sfxEnabled) return;
+                this.ensureContext();
+                if (!this.ctx) return;
+
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(987.77, now); // B5
+                osc.frequency.exponentialRampToValueAtTime(1318.51, now + 0.07);
+
+                gain.gain.setValueAtTime(0.11, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            }
+
+            // 交換寶石絲滑音效
+            playSwap() {
+                if (!this.sfxEnabled) return;
+                this.ensureContext();
+                if (!this.ctx) return;
+
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(340, now);
+                osc.frequency.exponentialRampToValueAtTime(560, now + 0.11);
+
+                gain.gain.setValueAtTime(0.13, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.13);
+            }
+
+            // 無效交換回彈音
+            playInvalid() {
+                if (!this.sfxEnabled) return;
+                this.ensureContext();
+                if (!this.ctx) return;
+
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(190, now);
+                osc.frequency.linearRampToValueAtTime(130, now + 0.15);
+
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.17);
+            }
+
+            // 三消五聲音階和弦（隨連擊 Combo 音高遞增！）
+            playMatch(combo = 1) {
+                if (!this.sfxEnabled) return;
+                this.ensureContext();
+                if (!this.ctx) return;
+
+                const now = this.ctx.currentTime;
+                const pentatonic = [523.25, 587.33, 659.25, 783.99, 880.00, 1046.50, 1174.66, 1318.51, 1567.98];
+                const base = pentatonic[Math.min(combo - 1, pentatonic.length - 1)];
+
+                [base, base * 1.25, base * 1.5].forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = idx === 2 ? 'sine' : 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.042);
+
+                    gain.gain.setValueAtTime(0.15, now + idx * 0.042);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.042 + 0.25);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.042);
+                    osc.stop(now + idx * 0.042 + 0.27);
+                });
+            }
+
+            // 特殊神力方塊引爆的震撼雷鳴與能量波音效
+            playDivineExplosion() {
+                if (!this.sfxEnabled) return;
+                this.ensureContext();
+                if (!this.ctx) return;
+
+                const now = this.ctx.currentTime;
+
+                // 1. 低頻神殿雷鳴震動
+                const subOsc = this.ctx.createOscillator();
+                const subGain = this.ctx.createGain();
+                subOsc.type = 'sawtooth';
+                subOsc.frequency.setValueAtTime(140, now);
+                subOsc.frequency.exponentialRampToValueAtTime(42, now + 0.36);
+
+                subGain.gain.setValueAtTime(0.24, now);
+                subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+
+                subOsc.connect(subGain);
+                subGain.connect(this.ctx.destination);
+                subOsc.start(now);
+                subOsc.stop(now + 0.39);
+
+                // 2. 高頻神聖能量波掃頻
+                const beamOsc = this.ctx.createOscillator();
+                const beamGain = this.ctx.createGain();
+                beamOsc.type = 'sine';
+                beamOsc.frequency.setValueAtTime(420, now);
+                beamOsc.frequency.exponentialRampToValueAtTime(1480, now + 0.28);
+
+                beamGain.gain.setValueAtTime(0.16, now);
+                beamGain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+
+                beamOsc.connect(beamGain);
+                beamGain.connect(this.ctx.destination);
+                beamOsc.start(now);
+                beamOsc.stop(now + 0.31);
+            }
+
+            // 通關神殿號角
+            playVictory() {
+                if (!this.sfxEnabled) return;
+                this.ensureContext();
+                if (!this.ctx) return;
+
+                const now = this.ctx.currentTime;
+                const fanfare = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+                fanfare.forEach((freq, i) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + i * 0.1);
+
+                    gain.gain.setValueAtTime(0.18, now + i * 0.1);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.42);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + i * 0.1);
+                    osc.stop(now + i * 0.1 + 0.44);
+                });
+            }
+        }
+
+        /**
+         * =========================================================================
+         * 3. 六大高精細琉璃金雕古埃及神話 SVG 圖騰資料庫
+         * =========================================================================
+         */
+        const DIVINE_GEMS = [
+            {
+                id: 0,
+                name: '荷魯斯之眼',
+                subtitle: '藍寶石與純金鑲邊',
+                lore: '天空之神荷魯斯的右眼，象徵神聖庇護、治癒與洞察萬物的全知智慧。',
+                bg: 'radial-gradient(circle at 30% 25%, #3b82f6 0%, #1d4ed8 48%, #0f172a 100%)',
+                border: '#93c5fd',
+                particleColor: '#38bdf8',
+                svg: `<svg viewBox="0 0 64 64" class="w-[82%] h-[82%] drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)]">
+                    <defs>
+                        <linearGradient id="goldRim0" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#fef9c3"/>
+                            <stop offset="50%" stop-color="#f59e0b"/>
+                            <stop offset="100%" stop-color="#92400e"/>
+                        </linearGradient>
+                    </defs>
+                    <!-- 眉弓金飾 -->
+                    <path d="M10 21C20 12 38 11 54 19" fill="none" stroke="url(#goldRim0)" stroke-width="3.6" stroke-linecap="round"/>
+                    <!-- 眼眶琉璃 -->
+                    <path d="M9 30C17 19 27 17 34 17C42 17 50 21 55 30C49 38 41 41 33 41C24 41 16 38 9 30Z" fill="#e0f2fe" stroke="url(#goldRim0)" stroke-width="2.6"/>
+                    <!-- 藍寶石虹膜 -->
+                    <circle cx="32" cy="29" r="8.5" fill="#1e40af" stroke="url(#goldRim0)" stroke-width="2.2"/>
+                    <circle cx="32" cy="29" r="4" fill="#38bdf8"/>
+                    <circle cx="29.5" cy="26.5" r="1.8" fill="#ffffff"/>
+                    <!-- 荷魯斯螺旋淚紋 -->
+                    <path d="M32 41V49C32 53 28 56 24 54.5C21 53.5 21 50.5 24 49.5" fill="none" stroke="url(#goldRim0)" stroke-width="3.2" stroke-linecap="round"/>
+                    <path d="M32 41L45 50" stroke="url(#goldRim0)" stroke-width="3" stroke-linecap="round"/>
+                </svg>`
+            },
+            {
+                id: 1,
+                name: '聖甲蟲',
+                subtitle: '祖母綠翡翠與金翼',
+                lore: '象徵太陽神凱布利每日推動太陽升起，代表永恆重生與強大生命力。',
+                bg: 'radial-gradient(circle at 30% 25%, #10b981 0%, #047857 50%, #022c22 100%)',
+                border: '#6ee7b7',
+                particleColor: '#10b981',
+                svg: `<svg viewBox="0 0 64 64" class="w-[82%] h-[82%] drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)]">
+                    <defs>
+                        <linearGradient id="goldRim1" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#fef9c3"/>
+                            <stop offset="50%" stop-color="#fbbf24"/>
+                            <stop offset="100%" stop-color="#b45309"/>
+                        </linearGradient>
+                        <radialGradient id="emeraldBody" cx="35%" cy="30%" r="70%">
+                            <stop offset="0%" stop-color="#6ee7b7"/>
+                            <stop offset="55%" stop-color="#059669"/>
+                            <stop offset="100%" stop-color="#064e3b"/>
+                        </radialGradient>
+                    </defs>
+                    <!-- 六足金飾 -->
+                    <path d="M20 26L11 18M19 35L9 35M21 44L12 52M44 26L53 18M45 35L55 35M43 44L52 52" stroke="url(#goldRim1)" stroke-width="3" stroke-linecap="round"/>
+                    <!-- 頭部日輪 -->
+                    <circle cx="32" cy="12" r="5" fill="#fef08a" stroke="url(#goldRim1)" stroke-width="1.5"/>
+                    <path d="M25 22C25 17 39 17 39 22Z" fill="url(#goldRim1)"/>
+                    <!-- 翡翠甲殼 -->
+                    <ellipse cx="32" cy="36" rx="13" ry="16" fill="url(#emeraldBody)" stroke="url(#goldRim1)" stroke-width="2.6"/>
+                    <path d="M32 20V52M19 32H45" stroke="url(#goldRim1)" stroke-width="2.2"/>
+                    <ellipse cx="27" cy="39" rx="2.5" ry="6" fill="rgba(255,255,255,0.28)"/>
+                </svg>`
+            },
+            {
+                id: 2,
+                name: '生命之符 Ankh',
+                subtitle: '紅寶石與太陽金環',
+                lore: '古埃及神祇手持的永生鑰匙，象徵凡人與眾神共享的永恆生命氣息。',
+                bg: 'radial-gradient(circle at 30% 25%, #f43f5e 0%, #be123c 50%, #4c0519 100%)',
+                border: '#fda4af',
+                particleColor: '#fb7185',
+                svg: `<svg viewBox="0 0 64 64" class="w-[82%] h-[82%] drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)]">
+                    <defs>
+                        <linearGradient id="goldRim2" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#fffbeb"/>
+                            <stop offset="45%" stop-color="#fbbf24"/>
+                            <stop offset="100%" stop-color="#92400e"/>
+                        </linearGradient>
+                    </defs>
+                    <!-- 太陽金環 -->
+                    <path d="M32 10C24.5 10 20 15.5 20 21.5C20 27.5 32 34 32 34C32 34 44 27.5 44 21.5C44 15.5 39.5 10 32 10Z" fill="none" stroke="url(#goldRim2)" stroke-width="5.2"/>
+                    <!-- 十字金柄 -->
+                    <path d="M16 34H48M32 34V54" stroke="url(#goldRim2)" stroke-width="5.2" stroke-linecap="round"/>
+                    <!-- 中央紅寶石鑲嵌 -->
+                    <polygon points="32,29 36,34 32,39 28,34" fill="#ffe4e6" stroke="#be123c" stroke-width="1.5"/>
+                </svg>`
+            },
+            {
+                id: 3,
+                name: '法老王面具',
+                subtitle: '帝王紫水晶與黃金條紋',
+                lore: '圖坦卡門風格的黃金頭巾面具，代表法老神聖無上的王權與秩序。',
+                bg: 'radial-gradient(circle at 30% 25%, #a855f7 0%, #6b21a8 52%, #2e1065 100%)',
+                border: '#d8b4fe',
+                particleColor: '#c084fc',
+                svg: `<svg viewBox="0 0 64 64" class="w-[82%] h-[82%] drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)]">
+                    <defs>
+                        <linearGradient id="goldMask" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#fef9c3"/>
+                            <stop offset="50%" stop-color="#f59e0b"/>
+                            <stop offset="100%" stop-color="#92400e"/>
+                        </linearGradient>
+                    </defs>
+                    <!-- 尼美斯頭巾外輪廓 -->
+                    <path d="M16 23C16 14 23 9 32 9C41 9 48 14 48 23L52 48L41 52L38 43H26L23 52L12 48L16 23Z" fill="url(#goldMask)" stroke="#fef08a" stroke-width="1.6"/>
+                    <!-- 青金石條紋 -->
+                    <path d="M16 20H48M15 27H49M14 34H50M13 41H51" stroke="#312e81" stroke-width="2.6"/>
+                    <!-- 額頭聖蛇徽記 -->
+                    <circle cx="32" cy="14" r="2.8" fill="#f43f5e" stroke="#fef08a" stroke-width="1"/>
+                    <!-- 法老面容 -->
+                    <path d="M23 22H41V35C41 40 37 44 32 44C27 44 23 40 23 35V22Z" fill="#fde68a" stroke="#b45309" stroke-width="1.4"/>
+                    <path d="M26 29H29.5M34.5 29H38M29 37H35" stroke="#1e1b4b" stroke-width="2.4" stroke-linecap="round"/>
+                    <!-- 帝王鬍鬚 -->
+                    <rect x="29.5" y="44" width="5" height="10" rx="1.5" fill="#312e81" stroke="#fbbf24" stroke-width="1.2"/>
+                </svg>`
+            },
+            {
+                id: 4,
+                name: '阿努比斯胡狼',
+                subtitle: '黑曜石與青金石金飾',
+                lore: '胡狼首神祇阿努比斯，守護神聖陵墓並以真理之羽秤量靈魂的公正守護者。',
+                bg: 'radial-gradient(circle at 30% 25%, #475569 0%, #1e293b 50%, #020617 100%)',
+                border: '#fbbf24',
+                particleColor: '#f59e0b',
+                svg: `<svg viewBox="0 0 64 64" class="w-[82%] h-[82%] drop-shadow-[0_2px_4px_rgba(0,0,0,0.85)]">
+                    <defs>
+                        <linearGradient id="goldCollar" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="#d97706"/>
+                            <stop offset="50%" stop-color="#fef08a"/>
+                            <stop offset="100%" stop-color="#d97706"/>
+                        </linearGradient>
+                    </defs>
+                    <!-- 高聳胡狼雙耳與頭像 -->
+                    <path d="M21 26L18 8L27 21H37L46 8L43 26L48 36L37 47H27L16 36L21 26Z" fill="#0f172a" stroke="url(#goldCollar)" stroke-width="2.4" stroke-linejoin="round"/>
+                    <!-- 雙耳內金線 -->
+                    <path d="M21 15L24 22M43 15L40 22" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round"/>
+                    <!-- 發光金瞳 -->
+                    <polygon points="24,30 29,29 27.5,33" fill="#fef08a"/>
+                    <polygon points="40,30 35,29 36.5,33" fill="#fef08a"/>
+                    <!-- 黃金項圈 -->
+                    <path d="M21 47H43L40 54H24L21 47Z" fill="url(#goldCollar)"/>
+                    <path d="M25 50.5H39" stroke="#1d4ed8" stroke-width="2.2"/>
+                </svg>`
+            },
+            {
+                id: 5,
+                name: '太陽神金字塔',
+                subtitle: '琥珀黃水晶與日輪光芒',
+                lore: '連結大地與太陽神「拉」的永恆幾何奇蹟，折射無窮光輝與神聖能量。',
+                bg: 'radial-gradient(circle at 30% 25%, #f59e0b 0%, #b45309 52%, #451a03 100%)',
+                border: '#fde047',
+                particleColor: '#facc15',
+                svg: `<svg viewBox="0 0 64 64" class="w-[82%] h-[82%] drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)]">
+                    <!-- 太陽神日輪與光芒 -->
+                    <circle cx="32" cy="15" r="6.5" fill="#fef9c3" stroke="#f59e0b" stroke-width="1.8"/>
+                    <path d="M32 5V7M21 10L23 11.5M43 10L41 11.5" stroke="#fef08a" stroke-width="2.2" stroke-linecap="round"/>
+                    <!-- 金字塔向陽面與陰影面 -->
+                    <polygon points="32,18 9,52 32,52" fill="#fde047" stroke="#fef9c3" stroke-width="1.5" stroke-linejoin="round"/>
+                    <polygon points="32,18 55,52 32,52" fill="#d97706" stroke="#fef9c3" stroke-width="1.5" stroke-linejoin="round"/>
+                    <!-- 石階紋理 -->
+                    <path d="M22 33H42M16 42H48" stroke="#92400e" stroke-width="1.8"/>
+                </svg>`
+            }
+        ];
+
+        // 荷魯斯全知之眼（直線 5 連消七彩神聖光球 SVG）
+        const OMNISCIENT_ORB_SVG = `<svg viewBox="0 0 64 64" class="w-[86%] h-[86%] drop-shadow-[0_0_8px_rgba(255,255,255,0.85)]">
+            <defs>
+                <radialGradient id="divineRainbow" cx="35%" cy="35%" r="65%">
+                    <stop offset="0%" stop-color="#ffffff"/>
+                    <stop offset="28%" stop-color="#fde047"/>
+                    <stop offset="58%" stop-color="#38bdf8"/>
+                    <stop offset="85%" stop-color="#c084fc"/>
+                    <stop offset="100%" stop-color="#f43f5e"/>
+                </radialGradient>
+            </defs>
+            <circle cx="32" cy="32" r="23" fill="url(#divineRainbow)" stroke="#fef9c3" stroke-width="2.8"/>
+            <path d="M14 32C20 22 26 19 32 19C38 19 44 22 50 32C44 42 38 45 32 45C26 45 20 42 14 32Z" fill="#090d16" stroke="#fde047" stroke-width="2.2"/>
+            <circle cx="32" cy="32" r="6" fill="#fef08a"/>
+            <circle cx="30" cy="30" r="2" fill="#ffffff"/>
+        </svg>`;
+
+        /**
+         * =========================================================================
+         * 4. 關卡章節設定表（無限遞進，每關擁有神殿名稱、雙重收集目標與分數門檻）
+         * =========================================================================
+         */
+        const TEMPLE_CHAPTERS = [
+            { name: '金字塔聖殿', targetScore: 1400, moves: 25, collects: [{ type: 0, count: 12 }, { type: 5, count: 12 }] },
+            { name: '阿努比斯神廟', targetScore: 2200, moves: 24, collects: [{ type: 4, count: 15 }, { type: 2, count: 15 }] },
+            { name: '卡納克神柱廳', targetScore: 3100, moves: 24, collects: [{ type: 1, count: 18 }, { type: 3, count: 18 }] },
+            { name: '帝王谷法老墓室', targetScore: 4200, moves: 23, collects: [{ type: 3, count: 22 }, { type: 0, count: 20 }] },
+            { name: '拉神太陽聖壇', targetScore: 5400, moves: 22, collects: [{ type: 5, count: 24 }, { type: 2, count: 24 }] }
+        ];
+
+        /**
+         * =========================================================================
+         * 5. 《尼羅河秘寶：諸神神殿》核心三消遊戲引擎
+         * =========================================================================
+         */
+        class MysticNileGame {
+            constructor() {
+                this.rows = 8;
+                this.cols = 8;
+                this.grid = [];
+                this.gemIdCounter = 1;
+
+                // 關卡進度與數值
+                this.level = 1;
+                this.templeName = '';
+                this.score = 0;
+                this.targetScore = 1400;
+                this.movesLeft = 25;
+                this.collectGoals = []; // [{ type, target, current }]
+
+                // 連擊與太陽神「拉神天罰」充能系統
+                this.combo = 0;
+                this.maxComboInLevel = 1;
+                this.raCharge = 0; // 0 ~ 100
+
+                // 操作鎖定與狀態
+                this.isBusy = false;
+                this.selectedCell = null;
+                this.scepterActive = false;
+
+                // 神明祝福道具次數
+                this.tools = { hint: 3, scepter: 2, hourglass: 2 };
+
+                // 音效與特效畫布陣列
+                this.audio = new DivineEgyptAudio();
+                this.particles = [];
+                this.beams = [];
+                this.shockwaves = [];
+                this.floatingTexts = [];
+
+                // DOM 元素快取
+                this.boardFrame = document.getElementById('board-frame');
+                this.boardContainer = document.getElementById('board-container');
+                this.gridBgLayer = document.getElementById('grid-bg-layer');
+                this.gemsLayer = document.getElementById('gems-layer');
+                this.fxCanvas = document.getElementById('fx-canvas');
+                this.fxCtx = this.fxCanvas.getContext('2d');
+
+                this.levelBadge = document.getElementById('level-badge');
+                this.templeNameEl = document.getElementById('temple-name');
+                this.movesDisplay = document.getElementById('moves-display');
+                this.scoreDisplay = document.getElementById('score-display');
+                this.targetScoreDisplay = document.getElementById('target-score-display');
+                this.scoreCheckIcon = document.getElementById('score-check-icon');
+                this.scoreProgressBar = document.getElementById('score-progress-bar');
+                this.collectTargetsContainer = document.getElementById('collect-targets-container');
+
+                this.raChargeBar = document.getElementById('ra-charge-bar');
+                this.raChargeText = document.getElementById('ra-charge-text');
+                this.toastBanner = document.getElementById('toast-banner');
+                this.modalOverlay = document.getElementById('modal-overlay');
+                this.guideModal = document.getElementById('guide-modal');
+
+                this.initGridSlots();
+                this.populateGuideLore();
+                this.bindEvents();
+                this.resizeFxCanvas();
+                this.startLevel(1);
+
+                // 定期隨機讓場上寶石閃爍琉璃掃光
+                setInterval(() => this.triggerRandomShimmer(), 2400);
+
+                // 啟動特效動畫迴圈
+                requestAnimationFrame((ts) => this.fxLoop(ts));
+            }
+
+            // 建立 8x8 神龕底層格線
+            initGridSlots() {
+                this.gridBgLayer.innerHTML = '';
+                const pct = 100 / 8;
+                for (let r = 0; r < this.rows; r++) {
+                    for (let c = 0; c < this.cols; c++) {
+                        const slot = document.createElement('div');
+                        slot.className = 'grid-slot';
+                        slot.style.width = `${pct}%`;
+                        slot.style.height = `${pct}%`;
+                        slot.style.left = `${c * pct}%`;
+                        slot.style.top = `${r * pct}%`;
+                        slot.innerHTML = '<div class="grid-slot-inner"></div>';
+                        this.gridBgLayer.appendChild(slot);
+                    }
+                }
+            }
+
+            // 填入「神話圖鑑」彈窗內的六大寶石文化說明
+            populateGuideLore() {
+                const container = document.getElementById('guide-gems-grid');
+                container.innerHTML = DIVINE_GEMS.map(gem => `
+                    <div class="obsidian-inset p-2.5 rounded-xl flex items-start gap-2.5">
+                        <div class="w-10 h-10 rounded-lg shrink-0 flex items-center justify-center p-1 border" style="background:${gem.bg}; border-color:${gem.border}">
+                            ${gem.svg}
+                        </div>
+                        <div>
+                            <div class="font-black text-amber-200">${gem.name}</div>
+                            <div class="text-[10px] text-amber-400/80 mb-0.5">${gem.subtitle}</div>
+                            <p class="text-[11px] text-slate-300 leading-snug">${gem.lore}</p>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            resizeFxCanvas() {
+                const rect = this.boardContainer.getBoundingClientRect();
+                const dpr = Math.min(window.devicePixelRatio || 1, 2);
+                this.fxCanvas.width = rect.width * dpr;
+                this.fxCanvas.height = rect.height * dpr;
+                this.fxCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            }
+
+            // 隨機挑幾顆寶石播放琉璃反光掃光
+            triggerRandomShimmer() {
+                if (this.isBusy) return;
+                for (let i = 0; i < 3; i++) {
+                    const r = Math.floor(Math.random() * this.rows);
+                    const c = Math.floor(Math.random() * this.cols);
+                    const gem = this.grid[r]?.[c];
+                    if (gem && gem.el) {
+                        gem.el.classList.remove('shimmer-once');
+                        void gem.el.offsetWidth;
+                        gem.el.classList.add('shimmer-once');
+                    }
+                }
+            }
+
+            // 綁定所有滑鼠、觸控滑動與功能按鈕事件
+            bindEvents() {
+                window.addEventListener('resize', () => this.resizeFxCanvas());
+
+                // 解鎖首次點擊音效/BGM
+                const unlockHandler = () => {
+                    this.audio.unlockOnFirstGesture();
+                    this.updateAudioIcons();
+                };
+                window.addEventListener('pointerdown', unlockHandler, { once: true });
+
+                // BGM 開關
+                document.getElementById('bgm-btn').addEventListener('click', () => {
+                    this.audio.toggleBgm();
+                    this.updateAudioIcons();
+                });
+
+                // SFX 開關
+                document.getElementById('sfx-btn').addEventListener('click', () => {
+                    this.audio.toggleSfx();
+                    this.updateAudioIcons();
+                });
+
+                // 重玩本關
+                document.getElementById('restart-btn').addEventListener('click', () => {
+                    if (!this.isBusy) this.startLevel(this.level);
+                });
+
+                // 神話圖鑑彈窗控制
+                document.getElementById('guide-btn').addEventListener('click', () => {
+                    this.guideModal.classList.remove('hidden');
+                });
+                document.getElementById('close-guide-btn').addEventListener('click', () => {
+                    this.guideModal.classList.add('hidden');
+                });
+                document.getElementById('confirm-guide-btn').addEventListener('click', () => {
+                    this.guideModal.classList.add('hidden');
+                });
+
+                // 道具 1：智慧之眼（提示最佳移動）
+                document.getElementById('tool-hint-btn').addEventListener('click', () => {
+                    if (this.isBusy || this.tools.hint <= 0) return;
+                    const move = this.findValidMove();
+                    if (move) {
+                        this.tools.hint--;
+                        this.updateToolsUI();
+                        this.clearHints();
+                        this.grid[move.r1][move.c1]?.el.classList.add('hint');
+                        this.grid[move.r2][move.c2]?.el.classList.add('hint');
+                        this.audio.playSelect();
+                        this.showToast('👁️ 智慧之眼已揭示神力契機！');
+                    } else {
+                        this.shuffleBoard(true);
+                    }
+                });
+
+                // 道具 2：法老權杖（單點神雷摧毀）
+                document.getElementById('tool-scepter-btn').addEventListener('click', () => {
+                    if (this.isBusy || this.tools.scepter <= 0) return;
+                    this.scepterActive = !this.scepterActive;
+                    document.body.classList.toggle('scepter-mode', this.scepterActive);
+                    if (this.scepterActive) {
+                        this.clearSelection();
+                        this.showToast('🪄 請點擊棋盤上任意寶石降下神雷！');
+                    }
+                });
+
+                // 道具 3：時光沙漏（重排盤面 + 額外獲得 3 步）
+                document.getElementById('tool-hourglass-btn').addEventListener('click', () => {
+                    if (this.isBusy || this.tools.hourglass <= 0) return;
+                    this.tools.hourglass--;
+                    this.movesLeft += 3;
+                    this.updateToolsUI();
+                    this.updateHUD();
+                    this.shuffleBoard(true, '⏳ 時光沙漏逆轉乾坤：盤面重排且步數 +3！');
+                });
+
+                // 棋盤點擊與滑動手勢事件
+                let dragStartCell = null;
+                let startX = 0;
+                let startY = 0;
+
+                const getCellFromPointer = (e) => {
+                    const rect = this.boardContainer.getBoundingClientRect();
+                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                    const c = Math.floor(((clientX - rect.left) / rect.width) * this.cols);
+                    const r = Math.floor(((clientY - rect.top) / rect.height) * this.rows);
+                    if (r >= 0 && r < this.rows && c >= 0 && c < this.cols) {
+                        return { r, c, clientX, clientY };
+                    }
+                    return null;
+                };
+
+                const onPointerDown = (e) => {
+                    if (this.isBusy || !this.modalOverlay.classList.contains('hidden')) return;
+                    const cell = getCellFromPointer(e);
+                    if (!cell) return;
+
+                    if (this.scepterActive) {
+                        this.useScepterOn(cell.r, cell.c);
+                        return;
+                    }
+
+                    dragStartCell = { r: cell.r, c: cell.c };
+                    startX = cell.clientX;
+                    startY = cell.clientY;
+                    this.handleCellClick(cell.r, cell.c);
+                };
+
+                const onPointerMove = (e) => {
+                    if (!dragStartCell || this.isBusy) return;
+                    if (e.cancelable) e.preventDefault();
+
+                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                    const dx = clientX - startX;
+                    const dy = clientY - startY;
+
+                    if (Math.max(Math.abs(dx), Math.abs(dy)) > 22) {
+                        let targetR = dragStartCell.r;
+                        let targetC = dragStartCell.c;
+
+                        if (Math.abs(dx) > Math.abs(dy)) {
+                            targetC += dx > 0 ? 1 : -1;
+                        } else {
+                            targetR += dy > 0 ? 1 : -1;
+                        }
+
+                        const origin = dragStartCell;
+                        dragStartCell = null;
+
+                        if (targetR >= 0 && targetR < this.rows && targetC >= 0 && targetC < this.cols) {
+                            this.clearSelection();
+                            this.trySwap(origin.r, origin.c, targetR, targetC);
+                        }
+                    }
+                };
+
+                const onPointerUp = () => {
+                    dragStartCell = null;
+                };
+
+                this.boardContainer.addEventListener('mousedown', onPointerDown);
+                window.addEventListener('mousemove', onPointerMove);
+                window.addEventListener('mouseup', onPointerUp);
+
+                this.boardContainer.addEventListener('touchstart', onPointerDown, { passive: false });
+                window.addEventListener('touchmove', onPointerMove, { passive: false });
+                window.addEventListener('touchend', onPointerUp);
+            }
+
+            updateAudioIcons() {
+                document.getElementById('bgm-slash').classList.toggle('hidden', this.audio.bgmEnabled);
+                document.getElementById('sfx-on-icon').classList.toggle('hidden', !this.audio.sfxEnabled);
+                document.getElementById('sfx-off-icon').classList.toggle('hidden', this.audio.sfxEnabled);
+            }
+
+            // 初始化指定關卡
+            startLevel(levelNum) {
+                this.level = levelNum;
+                this.score = 0;
+                this.combo = 0;
+                this.maxComboInLevel = 1;
+                this.raCharge = 0;
+                this.isBusy = false;
+                this.selectedCell = null;
+                this.scepterActive = false;
+                document.body.classList.remove('scepter-mode');
+
+                // 取得關卡章節設定（超過預設 5 章後自動遞進生成高難度神殿）
+                const preset = TEMPLE_CHAPTERS[levelNum - 1];
+                if (preset) {
+                    this.templeName = preset.name;
+                    this.targetScore = preset.targetScore;
+                    this.movesLeft = preset.moves;
+                    this.collectGoals = preset.collects.map(item => ({
+                        type: item.type,
+                        target: item.count,
+                        current: 0
+                    }));
+                } else {
+                    const extra = levelNum - TEMPLE_CHAPTERS.length;
+                    const names = ['荷魯斯天空之殿', '歐西里斯冥界聖堂', '伊西斯月光神廟', '永恆尼羅河王座'];
+                    this.templeName = names[(levelNum - 1) % names.length];
+                    this.targetScore = 5400 + extra * 1200;
+                    this.movesLeft = Math.max(19, 22 - Math.floor(extra / 2));
+                    const typeA = (levelNum * 2) % 6;
+                    const typeB = (levelNum * 2 + 3) % 6;
+                    const count = 24 + extra * 3;
+                    this.collectGoals = [
+                        { type: typeA, target: count, current: 0 },
+                        { type: typeB, target: count, current: 0 }
+                    ];
+                }
+
+                // 道具數量管理
+                if (levelNum === 1) {
+                    this.tools = { hint: 3, scepter: 2, hourglass: 2 };
+                } else {
+                    this.tools.hint = Math.min(5, this.tools.hint + 1);
+                    this.tools.scepter = Math.min(4, this.tools.scepter + 1);
+                    this.tools.hourglass = Math.min(4, this.tools.hourglass + 1);
+                }
+
+                this.modalOverlay.classList.add('hidden');
+                this.renderCollectGoalsUI();
+                this.updateHUD();
+                this.updateToolsUI();
+                this.generateInitialBoard();
+            }
+
+            // 渲染頂部圖騰收集目標徽章
+            renderCollectGoalsUI() {
+                this.collectTargetsContainer.innerHTML = this.collectGoals.map((goal, idx) => {
+                    const gemInfo = DIVINE_GEMS[goal.type];
+                    const remaining = Math.max(0, goal.target - goal.current);
+                    const done = remaining === 0;
+                    return `
+                        <div class="flex items-center gap-1.5 bg-slate-950/80 px-2 py-1 rounded-lg border ${done ? 'border-emerald-400/70' : 'border-amber-500/30'}">
+                            <div class="w-6 h-6 sm:w-7 sm:h-7 rounded-md flex items-center justify-center p-0.5 shrink-0" style="background:${gemInfo.bg}; border:1px solid ${gemInfo.border}">
+                                ${gemInfo.svg}
+                            </div>
+                            <span id="goal-count-${idx}" class="text-xs sm:text-sm font-black ${done ? 'text-emerald-400' : 'text-amber-100'}">
+                                ${done ? '✓' : remaining}
+                            </span>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // 產生無初始三連且保證有解的 8x8 盤面
+            generateInitialBoard() {
+                this.gemsLayer.innerHTML = '';
+                this.grid = Array.from({ length: this.rows }, () => Array(this.cols).fill(null));
+
+                for (let r = 0; r < this.rows; r++) {
+                    for (let c = 0; c < this.cols; c++) {
+                        let candidates = [0, 1, 2, 3, 4, 5];
+                        if (c >= 2 && this.grid[r][c - 1].type === this.grid[r][c - 2].type) {
+                            candidates = candidates.filter(t => t !== this.grid[r][c - 1].type);
+                        }
+                        if (r >= 2 && this.grid[r - 1][c].type === this.grid[r - 2][c].type) {
+                            candidates = candidates.filter(t => t !== this.grid[r - 1][c].type);
+                        }
+                        const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+                        this.grid[r][c] = this.createGemObject(r, c, chosen, null, false);
+                    }
+                }
+
+                if (!this.findValidMove()) {
+                    this.shuffleBoard(false);
+                }
+            }
+
+            createGemObject(r, c, type, special = null, spawnFromTop = false) {
+                const el = document.createElement('div');
+                el.className = 'gem-tile';
+                const pct = 100 / 8;
+                el.style.width = `${pct}%`;
+                el.style.height = `${pct}%`;
+
+                const inner = document.createElement('div');
+                inner.className = 'gem-inner';
+                this.applyGemVisual(inner, type, special);
+                el.appendChild(inner);
+
+                const startRow = spawnFromTop ? r - 3.5 : r;
+                el.style.transform = `translate3d(${c * 100}%, ${startRow * 100}%, 0)`;
+                this.gemsLayer.appendChild(el);
+
+                if (spawnFromTop) {
+                    void el.offsetWidth;
+                    el.style.transform = `translate3d(${c * 100}%, ${r * 100}%, 0)`;
+                }
+
+                return {
+                    id: this.gemIdCounter++,
+                    type,
+                    special, // null | 'beam-h' | 'beam-v' | 'bomb' | 'rainbow'
+                    el
+                };
+            }
+
+            applyGemVisual(innerEl, type, special) {
+                innerEl.className = 'gem-inner';
+                if (special === 'rainbow') {
+                    innerEl.classList.add('special-rainbow');
+                    innerEl.style.background = 'radial-gradient(circle, #312e81 0%, #090d16 100%)';
+                    innerEl.style.border = '2px solid #fef08a';
+                    innerEl.innerHTML = OMNISCIENT_ORB_SVG;
+                    return;
+                }
+
+                const info = DIVINE_GEMS[type];
+                innerEl.style.background = info.bg;
+                innerEl.style.border = `1.5px solid ${info.border}`;
+                innerEl.innerHTML = info.svg;
+
+                if (special === 'beam-h') {
+                    innerEl.classList.add('special-beam-h');
+                    innerEl.innerHTML += `<span class="absolute bottom-0.5 right-1 text-[10px] font-black text-yellow-200 drop-shadow">↔</span>`;
+                } else if (special === 'beam-v') {
+                    innerEl.classList.add('special-beam-v');
+                    innerEl.innerHTML += `<span class="absolute bottom-0.5 right-1 text-[10px] font-black text-sky-200 drop-shadow">↕</span>`;
+                } else if (special === 'bomb') {
+                    innerEl.classList.add('special-bomb');
+                    innerEl.innerHTML += `<span class="absolute top-0.5 right-1 text-[10px] drop-shadow">🔥</span>`;
+                }
+            }
+
+            handleCellClick(r, c) {
+                this.clearHints();
+                if (!this.selectedCell) {
+                    this.selectedCell = { r, c };
+                    this.grid[r][c]?.el.classList.add('selected');
+                    this.audio.playSelect();
+                    return;
+                }
+
+                const { r: r1, c: c1 } = this.selectedCell;
+                if (r1 === r && c1 === c) {
+                    this.clearSelection();
+                    return;
+                }
+
+                if (Math.abs(r1 - r) + Math.abs(c1 - c) === 1) {
+                    this.clearSelection();
+                    this.trySwap(r1, c1, r, c);
+                } else {
+                    this.clearSelection();
+                    this.selectedCell = { r, c };
+                    this.grid[r][c]?.el.classList.add('selected');
+                    this.audio.playSelect();
+                }
+            }
+
+            clearSelection() {
+                if (this.selectedCell) {
+                    const { r, c } = this.selectedCell;
+                    this.grid[r]?.[c]?.el.classList.remove('selected');
+                    this.selectedCell = null;
+                }
+            }
+
+            clearHints() {
+                document.querySelectorAll('.gem-tile.hint').forEach(el => el.classList.remove('hint'));
+            }
+
+            // 嘗試交換相鄰方塊（包含雙特殊神力方塊組合技判斷！）
+            async trySwap(r1, c1, r2, c2) {
+                if (this.isBusy) return;
+                this.isBusy = true;
+                this.clearHints();
+
+                const gemA = this.grid[r1][c1];
+                const gemB = this.grid[r2][c2];
+                if (!gemA || !gemB) {
+                    this.isBusy = false;
+                    return;
+                }
+
+                this.swapInGrid(r1, c1, r2, c2);
+                this.audio.playSwap();
+                await this.sleep(260);
+
+                // 【進階系統】檢查是否為「雙特殊神力方塊交換（Combo Fusion）」
+                if (gemA.special && gemB.special) {
+                    this.movesLeft--;
+                    this.combo = 1;
+                    this.updateHUD();
+                    await this.triggerDualSpecialFusion(r1, c1, r2, c2, gemA, gemB);
+                    await this.resolveCascadeLoop();
+                    await this.checkRaDivineStrike();
+                    this.checkEndOfTurn();
+                    return;
+                }
+
+                // 檢查單一「荷魯斯全知之眼（rainbow）」與普通寶石交換
+                if (gemA.special === 'rainbow' || gemB.special === 'rainbow') {
+                    this.movesLeft--;
+                    this.combo = 1;
+                    this.updateHUD();
+
+                    const rPos = gemA.special === 'rainbow' ? { r: r2, c: c2 } : { r: r1, c: c1 };
+                    const targetGem = gemA.special === 'rainbow' ? gemB : gemA;
+
+                    await this.triggerRainbowCombo(rPos.r, rPos.c, targetGem);
+                    await this.resolveCascadeLoop();
+                    await this.checkRaDivineStrike();
+                    this.checkEndOfTurn();
+                    return;
+                }
+
+                // 一般三消判定
+                const matches = this.findAllMatches();
+                if (matches.length === 0) {
+                    this.audio.playInvalid();
+                    this.swapInGrid(r1, c1, r2, c2);
+                    await this.sleep(250);
+                    this.isBusy = false;
+                    return;
+                }
+
+                this.movesLeft--;
+                this.combo = 0;
+                this.updateHUD();
+
+                await this.resolveCascadeLoop([{ r: r2, c: c2 }, { r: r1, c: c1 }]);
+                await this.checkRaDivineStrike();
+                this.checkEndOfTurn();
+            }
+
+            swapInGrid(r1, c1, r2, c2) {
+                const temp = this.grid[r1][c1];
+                this.grid[r1][c1] = this.grid[r2][c2];
+                this.grid[r2][c2] = temp;
+
+                if (this.grid[r1][c1]) {
+                    this.grid[r1][c1].el.style.transform = `translate3d(${c1 * 100}%, ${r1 * 100}%, 0)`;
+                }
+                if (this.grid[r2][c2]) {
+                    this.grid[r2][c2].el.style.transform = `translate3d(${c2 * 100}%, ${r2 * 100}%, 0)`;
+                }
+            }
+
+            /**
+             * 【雙特殊神力方塊組合技 (Combo Fusion)】
+             */
+            async triggerDualSpecialFusion(r1, c1, r2, c2, gemA, gemB) {
+                this.audio.playDivineExplosion();
+                this.triggerBoardShake();
+                const toDestroy = new Set([`${r1},${c1}`, `${r2},${c2}`]);
+
+                const hasRainbow = gemA.special === 'rainbow' || gemB.special === 'rainbow';
+                const bothRainbow = gemA.special === 'rainbow' && gemB.special === 'rainbow';
+
+                if (bothRainbow) {
+                    // 雙彩虹全知之眼：諸神黃昏全屏淨化！
+                    this.spawnArtText(3.5, 3.5, '諸神黃昏．全屏淨化！', '#fef08a');
+                    for (let r = 0; r < this.rows; r++) {
+                        for (let c = 0; c < this.cols; c++) {
+                            toDestroy.add(`${r},${c}`);
+                        }
+                    }
+                } else if (hasRainbow) {
+                    // 彩虹球 + 光束/神火：將場上所有同色寶石轉化為特殊神力方塊並引爆！
+                    const otherGem = gemA.special === 'rainbow' ? gemB : gemA;
+                    const targetType = otherGem.type;
+                    this.spawnArtText(r2, c2, '全知神力共振！', '#38bdf8');
+
+                    for (let r = 0; r < this.rows; r++) {
+                        for (let c = 0; c < this.cols; c++) {
+                            const g = this.grid[r][c];
+                            if (g && g.type === targetType) {
+                                g.special = otherGem.special;
+                                this.applyGemVisual(g.el.firstElementChild, g.type, g.special);
+                                this.spawnBeam(r2, c2, r, c, '#38bdf8');
+                                toDestroy.add(`${r},${c}`);
+                            }
+                        }
+                    }
+                    this.expandSpecialTriggers(toDestroy);
+                } else {
+                    // 光束 + 光束 / 光束 + 神火 / 神火 + 神火：超級十字全屏轟炸！
+                    this.spawnArtText(r2, c2, '太陽神十字天罰！', '#facc15');
+                    for (let offset = -1; offset <= 1; offset++) {
+                        const row = r2 + offset;
+                        const col = c2 + offset;
+                        if (row >= 0 && row < this.rows) {
+                            this.spawnBeam(row, 0, row, this.cols - 1, '#facc15');
+                            for (let c = 0; c < this.cols; c++) toDestroy.add(`${row},${c}`);
+                        }
+                        if (col >= 0 && col < this.cols) {
+                            this.spawnBeam(0, col, this.rows - 1, col, '#38bdf8');
+                            for (let r = 0; r < this.rows; r++) toDestroy.add(`${r},${col}`);
+                        }
+                    }
+                    this.expandSpecialTriggers(toDestroy);
+                }
+
+                await this.destroyCells(toDestroy, []);
+                await this.dropAndRefill();
+            }
+
+            // 單一彩虹球消除場上所有同色圖騰
+            async triggerRainbowCombo(rainbowR, rainbowC, targetGem) {
+                this.audio.playDivineExplosion();
+                this.triggerBoardShake();
+                this.spawnArtText(rainbowR, rainbowC, '荷魯斯全知之光！', '#7dd3fc');
+
+                const toDestroy = new Set([`${rainbowR},${rainbowC}`]);
+                const targetType = targetGem.type;
+
+                for (let r = 0; r < this.rows; r++) {
+                    for (let c = 0; c < this.cols; c++) {
+                        if (this.grid[r][c] && this.grid[r][c].type === targetType) {
+                            toDestroy.add(`${r},${c}`);
+                            this.spawnBeam(rainbowR, rainbowC, r, c, '#38bdf8');
+                        }
+                    }
+                }
+
+                this.expandSpecialTriggers(toDestroy);
+                await this.destroyCells(toDestroy, []);
+                await this.dropAndRefill();
+            }
+
+            // 連鎖反應主迴圈
+            async resolveCascadeLoop(preferredSpawnCoords = []) {
+                while (true) {
+                    const matchGroups = this.findAllMatches();
+                    if (matchGroups.length === 0) break;
+
+                    this.combo++;
+                    if (this.combo > this.maxComboInLevel) {
+                        this.maxComboInLevel = this.combo;
+                    }
+                    this.audio.playMatch(this.combo);
+
+                    const toDestroy = new Set();
+                    const specialsToSpawn = [];
+
+                    matchGroups.forEach(group => {
+                        group.cells.forEach(pos => toDestroy.add(`${pos.r},${pos.c}`));
+
+                        if (group.cells.length >= 4) {
+                            const spawnPos = group.cells.find(p =>
+                                preferredSpawnCoords.some(pref => pref.r === p.r && pref.c === p.c)
+                            ) || group.cells[Math.floor(group.cells.length / 2)];
+
+                            let specialType = null;
+                            if (group.isStraight5) {
+                                specialType = 'rainbow';
+                            } else if (group.isLTShape) {
+                                specialType = 'bomb';
+                            } else {
+                                specialType = group.isHorizontal ? 'beam-h' : 'beam-v';
+                            }
+
+                            specialsToSpawn.push({
+                                r: spawnPos.r,
+                                c: spawnPos.c,
+                                type: group.type,
+                                special: specialType
+                            });
+                        }
+                    });
+
+                    preferredSpawnCoords = [];
+                    this.expandSpecialTriggers(toDestroy);
+
+                    await this.destroyCells(toDestroy, specialsToSpawn);
+                    await this.dropAndRefill();
+                }
+            }
+
+            // 連鎖擴散特殊方塊效果
+            expandSpecialTriggers(toDestroySet) {
+                let addedNew = true;
+                const triggered = new Set();
+
+                while (addedNew) {
+                    addedNew = false;
+                    Array.from(toDestroySet).forEach(key => {
+                        if (triggered.has(key)) return;
+                        const [r, c] = key.split(',').map(Number);
+                        const gem = this.grid[r]?.[c];
+                        if (!gem || !gem.special) return;
+
+                        triggered.add(key);
+                        this.audio.playDivineExplosion();
+                        this.triggerBoardShake();
+
+                        if (gem.special === 'beam-h') {
+                            this.spawnBeam(r, 0, r, this.cols - 1, '#facc15');
+                            for (let col = 0; col < this.cols; col++) {
+                                const k = `${r},${col}`;
+                                if (!toDestroySet.has(k)) {
+                                    toDestroySet.add(k);
+                                    addedNew = true;
+                                }
+                            }
+                        } else if (gem.special === 'beam-v') {
+                            this.spawnBeam(0, c, this.rows - 1, c, '#38bdf8');
+                            for (let row = 0; row < this.rows; row++) {
+                                const k = `${row},${c}`;
+                                if (!toDestroySet.has(k)) {
+                                    toDestroySet.add(k);
+                                    addedNew = true;
+                                }
+                            }
+                        } else if (gem.special === 'bomb') {
+                            this.spawnShockwave(r, c, '#fb7185');
+                            for (let dr = -1; dr <= 1; dr++) {
+                                for (let dc = -1; dc <= 1; dc++) {
+                                    const nr = r + dr;
+                                    const nc = c + dc;
+                                    if (nr >= 0 && nr < this.rows && nc >= 0 && nc < this.cols) {
+                                        const k = `${nr},${nc}`;
+                                        if (!toDestroySet.has(k)) {
+                                            toDestroySet.add(k);
+                                            addedNew = true;
+                                        }
+                                    }
+                                }
+                            }
+                        } else if (gem.special === 'rainbow') {
+                            const randType = Math.floor(Math.random() * 6);
+                            for (let row = 0; row < this.rows; row++) {
+                                for (let col = 0; col < this.cols; col++) {
+                                    if (this.grid[row][col]?.type === randType) {
+                                        const k = `${row},${col}`;
+                                        if (!toDestroySet.has(k)) {
+                                            toDestroySet.add(k);
+                                            addedNew = true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+
+            // 銷毀方塊、更新圖騰收集數量、累積「拉神天罰」充能條並產生華麗浮動文字
+            async destroyCells(toDestroySet, specialsToSpawn) {
+                const spawnMap = new Map();
+                specialsToSpawn.forEach(sp => spawnMap.set(`${sp.r},${sp.c}`, sp));
+
+                let sumR = 0;
+                let sumC = 0;
+                let count = 0;
+
+                toDestroySet.forEach(key => {
+                    const [r, c] = key.split(',').map(Number);
+                    const gem = this.grid[r][c];
+                    if (gem) {
+                        gem.el.classList.add('matching');
+                        const color = gem.special === 'rainbow' ? '#38bdf8' : DIVINE_GEMS[gem.type].particleColor;
+                        this.spawnExplosionParticles(r, c, color);
+
+                        // 統計收集目標進度
+                        this.collectGoals.forEach((goal, idx) => {
+                            if (goal.type === gem.type && goal.current < goal.target) {
+                                goal.current++;
+                                const el = document.getElementById(`goal-count-${idx}`);
+                                if (el) {
+                                    const rem = Math.max(0, goal.target - goal.current);
+                                    el.textContent = rem === 0 ? '✓' : rem;
+                                    if (rem === 0) {
+                                        el.className = 'text-xs sm:text-sm font-black text-emerald-400';
+                                        el.parentElement.classList.replace('border-amber-500/30', 'border-emerald-400/70');
+                                    }
+                                }
+                            }
+                        });
+
+                        sumR += r;
+                        sumC += c;
+                        count++;
+                    }
+                });
+
+                // 計分與太陽神充能累積
+                const basePoints = count * 40;
+                const gainedScore = Math.round(basePoints * (1 + (this.combo - 1) * 0.45));
+                this.score += gainedScore;
+                this.raCharge = Math.min(100, this.raCharge + count * 4.5);
+                this.updateHUD();
+
+                if (count > 0) {
+                    const avgR = sumR / count;
+                    const avgC = sumC / count;
+                    if (this.combo >= 2) {
+                        this.spawnArtText(avgR, avgC, `神力共振 x${this.combo}！ +${gainedScore}`, '#fef08a');
+                    } else {
+                        this.spawnArtText(avgR, avgC, `+${gainedScore}`, '#fde68a');
+                    }
+                }
+
+                await this.sleep(250);
+
+                toDestroySet.forEach(key => {
+                    const [r, c] = key.split(',').map(Number);
+                    const gem = this.grid[r][c];
+                    if (gem) {
+                        gem.el.remove();
+                        this.grid[r][c] = null;
+                    }
+                    if (spawnMap.has(key)) {
+                        const sp = spawnMap.get(key);
+                        this.grid[r][c] = this.createGemObject(r, c, sp.type, sp.special, false);
+                    }
+                });
+            }
+
+            // 太陽神「拉神天罰」充能滿 100% 自動釋放 3 道神聖天雷
+            async checkRaDivineStrike() {
+                if (this.raCharge < 100) return;
+
+                this.raCharge = 0;
+                this.updateHUD();
+                this.showToast('☀️ 太陽神充能完畢：降下「拉神天罰」神雷！');
+                this.audio.playDivineExplosion();
+                this.triggerBoardShake();
+
+                const targets = new Set();
+                while (targets.size < 4) {
+                    const r = Math.floor(Math.random() * this.rows);
+                    const c = Math.floor(Math.random() * this.cols);
+                    targets.add(`${r},${c}`);
+                }
+
+                targets.forEach(key => {
+                    const [r, c] = key.split(',').map(Number);
+                    this.spawnBeam(0, c, r, c, '#fef08a');
+                    this.spawnShockwave(r, c, '#f59e0b');
+                });
+
+                this.expandSpecialTriggers(targets);
+                await this.destroyCells(targets, []);
+                await this.dropAndRefill();
+                await this.resolveCascadeLoop();
+            }
+
+            async dropAndRefill() {
+                for (let c = 0; c < this.cols; c++) {
+                    let writeRow = this.rows - 1;
+                    for (let r = this.rows - 1; r >= 0; r--) {
+                        if (this.grid[r][c] !== null) {
+                            if (writeRow !== r) {
+                                const gem = this.grid[r][c];
+                                this.grid[writeRow][c] = gem;
+                                this.grid[r][c] = null;
+                                gem.el.style.transform = `translate3d(${c * 100}%, ${writeRow * 100}%, 0)`;
+                            }
+                            writeRow--;
+                        }
+                    }
+
+                    for (let r = writeRow; r >= 0; r--) {
+                        const randomType = Math.floor(Math.random() * 6);
+                        this.grid[r][c] = this.createGemObject(r, c, randomType, null, true);
+                    }
+                }
+                await this.sleep(270);
+            }
+
+            // 掃描全盤面三消群組（識別 4 連、L/T 5 連、直線 5 連）
+            findAllMatches() {
+                const rawRuns = [];
+
+                // 橫向
+                for (let r = 0; r < this.rows; r++) {
+                    let c = 0;
+                    while (c < this.cols) {
+                        const gem = this.grid[r][c];
+                        if (!gem || gem.special === 'rainbow') { c++; continue; }
+                        let endC = c + 1;
+                        while (endC < this.cols && this.grid[r][endC] && this.grid[r][endC].type === gem.type && this.grid[r][endC].special !== 'rainbow') {
+                            endC++;
+                        }
+                        if (endC - c >= 3) {
+                            const cells = [];
+                            for (let k = c; k < endC; k++) cells.push({ r, c: k });
+                            rawRuns.push({ type: gem.type, cells, isHorizontal: true, isStraight5: (endC - c) >= 5 });
+                        }
+                        c = endC;
+                    }
+                }
+
+                // 縱向
+                for (let c = 0; c < this.cols; c++) {
+                    let r = 0;
+                    while (r < this.rows) {
+                        const gem = this.grid[r][c];
+                        if (!gem || gem.special === 'rainbow') { r++; continue; }
+                        let endR = r + 1;
+                        while (endR < this.rows && this.grid[endR][c] && this.grid[endR][c].type === gem.type && this.grid[endR][c].special !== 'rainbow') {
+                            endR++;
+                        }
+                        if (endR - r >= 3) {
+                            const cells = [];
+                            for (let k = r; k < endR; k++) cells.push({ r: k, c });
+                            rawRuns.push({ type: gem.type, cells, isHorizontal: false, isStraight5: (endR - r) >= 5 });
+                        }
+                        r = endR;
+                    }
+                }
+
+                // 合併相交群組識別 L/T 型
+                const merged = [];
+                const visited = new Array(rawRuns.length).fill(false);
+
+                for (let i = 0; i < rawRuns.length; i++) {
+                    if (visited[i]) continue;
+                    visited[i] = true;
+
+                    const group = {
+                        type: rawRuns[i].type,
+                        cellMap: new Map(),
+                        isHorizontal: rawRuns[i].isHorizontal,
+                        isStraight5: rawRuns[i].isStraight5,
+                        isLTShape: false
+                    };
+                    rawRuns[i].cells.forEach(p => group.cellMap.set(`${p.r},${p.c}`, p));
+
+                    let expanded = true;
+                    while (expanded) {
+                        expanded = false;
+                        for (let j = 0; j < rawRuns.length; j++) {
+                            if (visited[j] || rawRuns[j].type !== group.type) continue;
+                            if (rawRuns[j].cells.some(p => group.cellMap.has(`${p.r},${p.c}`))) {
+                                visited[j] = true;
+                                expanded = true;
+                                rawRuns[j].cells.forEach(p => group.cellMap.set(`${p.r},${p.c}`, p));
+                                if (rawRuns[j].isStraight5) group.isStraight5 = true;
+                                if (rawRuns[j].isHorizontal !== group.isHorizontal) group.isLTShape = true;
+                            }
+                        }
+                    }
+
+                    merged.push({
+                        type: group.type,
+                        cells: Array.from(group.cellMap.values()),
+                        isHorizontal: group.isHorizontal,
+                        isStraight5: group.isStraight5,
+                        isLTShape: group.isLTShape
+                    });
+                }
+
+                return merged;
+            }
+
+            findValidMove() {
+                for (let r = 0; r < this.rows; r++) {
+                    for (let c = 0; c < this.cols; c++) {
+                        if (this.grid[r][c]?.special === 'rainbow') {
+                            if (c + 1 < this.cols) return { r1: r, c1: c, r2: r, c2: c + 1 };
+                            if (r + 1 < this.rows) return { r1: r, c1: c, r2: r + 1, c2: c };
+                        }
+                        if (c + 1 < this.cols) {
+                            this.tempSwap(r, c, r, c + 1);
+                            const ok = this.findAllMatches().length > 0;
+                            this.tempSwap(r, c, r, c + 1);
+                            if (ok) return { r1: r, c1: c, r2: r, c2: c + 1 };
+                        }
+                        if (r + 1 < this.rows) {
+                            this.tempSwap(r, c, r + 1, c);
+                            const ok = this.findAllMatches().length > 0;
+                            this.tempSwap(r, c, r + 1, c);
+                            if (ok) return { r1: r, c1: c, r2: r + 1, c2: c };
+                        }
+                    }
+                }
+                return null;
+            }
+
+            tempSwap(r1, c1, r2, c2) {
+                const t = this.grid[r1][c1];
+                this.grid[r1][c1] = this.grid[r2][c2];
+                this.grid[r2][c2] = t;
+            }
+
+            // 法老權杖單點消除
+            async useScepterOn(r, c) {
+                this.scepterActive = false;
+                document.body.classList.remove('scepter-mode');
+                this.tools.scepter--;
+                this.updateToolsUI();
+
+                this.isBusy = true;
+                this.combo = 1;
+                this.audio.playDivineExplosion();
+                this.triggerBoardShake();
+                this.spawnShockwave(r, c, '#fb7185');
+
+                const toDestroy = new Set([`${r},${c}`]);
+                this.expandSpecialTriggers(toDestroy);
+                await this.destroyCells(toDestroy, []);
+                await this.dropAndRefill();
+                await this.resolveCascadeLoop();
+                await this.checkRaDivineStrike();
+                this.checkEndOfTurn();
+            }
+
+            // 重新洗牌
+            async shuffleBoard(playEffects = true, customMsg = null) {
+                this.isBusy = true;
+                this.clearSelection();
+                this.clearHints();
+
+                if (playEffects) {
+                    this.audio.playDivineExplosion();
+                    this.showToast(customMsg || '🌪️ 神殿風暴重新排列了所有秘寶！');
+                }
+
+                const allGems = [];
+                for (let r = 0; r < this.rows; r++) {
+                    for (let c = 0; c < this.cols; c++) {
+                        if (this.grid[r][c]) allGems.push(this.grid[r][c]);
+                    }
+                }
+
+                let attempts = 0;
+                do {
+                    for (let i = allGems.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [allGems[i], allGems[j]] = [allGems[j], allGems[i]];
+                    }
+                    let idx = 0;
+                    for (let r = 0; r < this.rows; r++) {
+                        for (let c = 0; c < this.cols; c++) {
+                            this.grid[r][c] = allGems[idx++];
+                        }
+                    }
+                    attempts++;
+                } while ((this.findAllMatches().length > 0 || !this.findValidMove()) && attempts < 45);
+
+                for (let r = 0; r < this.rows; r++) {
+                    for (let c = 0; c < this.cols; c++) {
+                        this.grid[r][c].el.style.transform = `translate3d(${c * 100}%, ${r * 100}%, 0)`;
+                    }
+                }
+
+                await this.sleep(320);
+                this.isBusy = false;
+            }
+
+            // 檢查本回合是否達成「分數 + 圖騰收集」雙重過關條件
+            async checkEndOfTurn() {
+                const scoreMet = this.score >= this.targetScore;
+                const goalsMet = this.collectGoals.every(g => g.current >= g.target);
+
+                if (scoreMet && goalsMet) {
+                    this.isBusy = false;
+                    this.audio.playVictory();
+                    this.showEndModal(true);
+                    return;
+                }
+
+                if (this.movesLeft <= 0) {
+                    this.isBusy = false;
+                    this.audio.playInvalid();
+                    this.showEndModal(false);
+                    return;
+                }
+
+                if (!this.findValidMove()) {
+                    await this.shuffleBoard(true, '🔮 盤面無可用步數，諸神自動重排秘寶！');
+                } else {
+                    this.isBusy = false;
+                }
+            }
+
+            showEndModal(isWin) {
+                const iconEl = document.getElementById('modal-icon');
+                const titleEl = document.getElementById('modal-title');
+                const descEl = document.getElementById('modal-desc');
+                const scoreEl = document.getElementById('modal-score');
+                const comboEl = document.getElementById('modal-max-combo');
+                const btnEl = document.getElementById('modal-action-btn');
+
+                scoreEl.textContent = this.score.toLocaleString();
+                comboEl.textContent = `x${this.maxComboInLevel}`;
+
+                if (isWin) {
+                    iconEl.textContent = '👑';
+                    titleEl.textContent = `${this.templeName} 封印解除！`;
+                    descEl.textContent = `諸神讚許您的神聖智慧！已獲得神明祝福道具補充，準備踏入下一座神殿。`;
+                    btnEl.textContent = `前往第 ${this.level + 1} 關神殿`;
+                    btnEl.onclick = () => this.startLevel(this.level + 1);
+                } else {
+                    iconEl.textContent = '⏳';
+                    titleEl.textContent = '神殿試煉未竟！';
+                    descEl.textContent = `步數已耗盡，需同時達成目標分數與圖騰收集才能開啟神殿大門。`;
+                    btnEl.textContent = '重新挑戰本座神殿';
+                    btnEl.onclick = () => this.startLevel(this.level);
+                }
+
+                this.modalOverlay.classList.remove('hidden');
+            }
+
+            updateHUD() {
+                this.levelBadge.textContent = `第 ${this.level} 關`;
+                this.templeNameEl.textContent = this.templeName;
+                this.movesDisplay.textContent = this.movesLeft;
+                this.movesDisplay.className = this.movesLeft <= 5
+                    ? 'text-lg sm:text-xl font-black text-rose-400 animate-pulse leading-tight'
+                    : 'text-lg sm:text-xl font-black text-sky-400 leading-tight';
+
+                this.scoreDisplay.textContent = this.score.toLocaleString();
+                this.targetScoreDisplay.textContent = this.targetScore.toLocaleString();
+
+                const scoreMet = this.score >= this.targetScore;
+                this.scoreCheckIcon.classList.toggle('hidden', !scoreMet);
+
+                const pct = Math.min(100, (this.score / this.targetScore) * 100);
+                this.scoreProgressBar.style.width = `${pct}%`;
+
+                const raPct = Math.round(this.raCharge);
+                this.raChargeBar.style.width = `${raPct}%`;
+                this.raChargeText.textContent = `${raPct}%`;
+            }
+
+            updateToolsUI() {
+                document.getElementById('hint-count').textContent = this.tools.hint;
+                document.getElementById('scepter-count').textContent = this.tools.scepter;
+                document.getElementById('hourglass-count').textContent = this.tools.hourglass;
+
+                document.getElementById('tool-hint-btn').disabled = this.tools.hint <= 0;
+                document.getElementById('tool-scepter-btn').disabled = this.tools.scepter <= 0;
+                document.getElementById('tool-hourglass-btn').disabled = this.tools.hourglass <= 0;
+            }
+
+            showToast(msg) {
+                this.toastBanner.textContent = msg;
+                this.toastBanner.style.opacity = '1';
+                clearTimeout(this.toastTimer);
+                this.toastTimer = setTimeout(() => {
+                    this.toastBanner.style.opacity = '0';
+                }, 2400);
+            }
+
+            triggerBoardShake() {
+                this.boardFrame.classList.remove('shake-board');
+                void this.boardFrame.offsetWidth;
+                this.boardFrame.classList.add('shake-board');
+            }
+
+            // =========================================================
+            // Canvas 華麗粒子、雷射光束、神火衝擊波與浮動藝術字系統
+            // =========================================================
+            spawnExplosionParticles(r, c, color) {
+                const rect = this.boardContainer.getBoundingClientRect();
+                const cellW = rect.width / this.cols;
+                const cellH = rect.height / this.rows;
+                const cx = (c + 0.5) * cellW;
+                const cy = (r + 0.5) * cellH;
+
+                for (let i = 0; i < 10; i++) {
+                    const angle = (Math.PI * 2 * i) / 10 + Math.random() * 0.4;
+                    const speed = 55 + Math.random() * 125;
+                    this.particles.push({
+                        x: cx,
+                        y: cy,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed,
+                        size: 2.2 + Math.random() * 2.8,
+                        color,
+                        alpha: 1
+                    });
+                }
+            }
+
+            spawnBeam(r1, c1, r2, c2, color) {
+                const rect = this.boardContainer.getBoundingClientRect();
+                const cellW = rect.width / this.cols;
+                const cellH = rect.height / this.rows;
+                this.beams.push({
+                    x1: (c1 + 0.5) * cellW,
+                    y1: (r1 + 0.5) * cellH,
+                    x2: (c2 + 0.5) * cellW,
+                    y2: (r2 + 0.5) * cellH,
+                    color,
+                    alpha: 1
+                });
+            }
+
+            spawnShockwave(r, c, color) {
+                const rect = this.boardContainer.getBoundingClientRect();
+                const cellW = rect.width / this.cols;
+                const cellH = rect.height / this.rows;
+                this.shockwaves.push({
+                    x: (c + 0.5) * cellW,
+                    y: (r + 0.5) * cellH,
+                    radius: cellW * 0.3,
+                    maxRadius: cellW * 2.2,
+                    color,
+                    alpha: 1
+                });
+            }
+
+            spawnArtText(r, c, text, color = '#fef08a') {
+                const rect = this.boardContainer.getBoundingClientRect();
+                const cellW = rect.width / this.cols;
+                const cellH = rect.height / this.rows;
+                // 確保文字在畫面左右安全邊界內不被裁切
+                const rawX = (c + 0.5) * cellW;
+                const safeX = Math.max(85, Math.min(rect.width - 85, rawX));
+                this.floatingTexts.push({
+                    x: safeX,
+                    y: (r + 0.5) * cellH,
+                    text,
+                    color,
+                    alpha: 1
+                });
+            }
+
+            fxLoop(ts) {
+                if (!this.lastFxTs) this.lastFxTs = ts;
+                const dt = Math.min((ts - this.lastFxTs) / 1000, 0.05);
+                this.lastFxTs = ts;
+
+                const rect = this.boardContainer.getBoundingClientRect();
+                const ctx = this.fxCtx;
+                ctx.clearRect(0, 0, rect.width, rect.height);
+
+                // 1. 神力雷射光束
+                for (let i = this.beams.length - 1; i >= 0; i--) {
+                    const b = this.beams[i];
+                    ctx.save();
+                    ctx.globalAlpha = Math.max(0, b.alpha);
+                    ctx.strokeStyle = b.color;
+                    ctx.shadowColor = b.color;
+                    ctx.shadowBlur = 18;
+                    ctx.lineWidth = 8 * b.alpha;
+                    ctx.lineCap = 'round';
+                    ctx.beginPath();
+                    ctx.moveTo(b.x1, b.y1);
+                    ctx.lineTo(b.x2, b.y2);
+                    ctx.stroke();
+
+                    // 核心白光
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 3 * b.alpha;
+                    ctx.stroke();
+                    ctx.restore();
+
+                    b.alpha -= 2.6 * dt;
+                    if (b.alpha <= 0) this.beams.splice(i, 1);
+                }
+
+                // 2. 聖甲蟲神火衝擊波圓環
+                for (let i = this.shockwaves.length - 1; i >= 0; i--) {
+                    const sw = this.shockwaves[i];
+                    ctx.save();
+                    ctx.globalAlpha = Math.max(0, sw.alpha);
+                    ctx.strokeStyle = sw.color;
+                    ctx.shadowColor = sw.color;
+                    ctx.shadowBlur = 15;
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.arc(sw.x, sw.y, sw.radius, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.restore();
+
+                    sw.radius += (sw.maxRadius - sw.radius) * 8 * dt;
+                    sw.alpha -= 2.3 * dt;
+                    if (sw.alpha <= 0) this.shockwaves.splice(i, 1);
+                }
+
+                // 3. 琉璃碎片與金塵粒子
+                for (let i = this.particles.length - 1; i >= 0; i--) {
+                    const p = this.particles[i];
+                    p.x += p.vx * dt;
+                    p.y += p.vy * dt;
+                    p.vy += 280 * dt;
+                    p.alpha -= 2.1 * dt;
+
+                    if (p.alpha <= 0) {
+                        this.particles.splice(i, 1);
+                        continue;
+                    }
+
+                    ctx.save();
+                    ctx.globalAlpha = p.alpha;
+                    ctx.fillStyle = p.color;
+                    ctx.shadowColor = p.color;
+                    ctx.shadowBlur = 6;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+
+                // 4. 浮動連擊藝術字
+                for (let i = this.floatingTexts.length - 1; i >= 0; i--) {
+                    const ft = this.floatingTexts[i];
+                    ft.y -= 44 * dt;
+                    ft.alpha -= 1.15 * dt;
+
+                    if (ft.alpha <= 0) {
+                        this.floatingTexts.splice(i, 1);
+                        continue;
+                    }
+
+                    ctx.save();
+                    ctx.globalAlpha = ft.alpha;
+                    ctx.font = '900 17px "Noto Serif TC", "Noto Sans TC", sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillStyle = ft.color;
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
+                    ctx.shadowBlur = 8;
+                    ctx.fillText(ft.text, ft.x, ft.y);
+                    ctx.restore();
+                }
+
+                requestAnimationFrame((t) => this.fxLoop(t));
+            }
+
+            sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+        }
+
+        // 啟動背景與遊戲主引擎
+        window.addEventListener('DOMContentLoaded', () => {
+            new AmbientTempleBackground('ambient-bg-canvas');
+            new MysticNileGame();
+        });
+    </script>
+</body>
+</html>
